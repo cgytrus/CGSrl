@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <Version>0.1.0</Version>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\PER\PER.Abstractions\PER.Abstractions.csproj" />
+        <ProjectReference Include="..\PER\PER.Audio\PER.Audio.csproj" />
+        <ProjectReference Include="..\PER\PER.Util\PER.Util.csproj" />
+        <ProjectReference Include="..\PER\PER\PER.csproj" />
+        <ProjectReference Include="..\PER\PRR.UI\PRR.UI.csproj" />
+        <ProjectReference Include="..\PER\PRR\PRR.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="NLog.config;resources\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    </ItemGroup>
+
+</Project>

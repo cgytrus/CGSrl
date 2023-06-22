@@ -1,0 +1,130 @@
+﻿{
+    "frameLeft": { },
+    "frameRight": {
+        "position": { "x": 127, "y": 0 },
+        "align": "right"
+    },
+    "header.audio": {
+        "text": "[ AUDIO ]",
+        "position": { "x": 2, "y": 13 }
+    },
+    "volume.master": {
+        "position": { "x": 16, "y": 15 },
+        "width": 21,
+        "minValue": 0.0,
+        "maxValue": 1.0
+    },
+    "volume.master.label": {
+        "text": "MASTER",
+        "position": { "x": 4, "y": 15 }
+    },
+    "volume.master.value": {
+        "position": { "x": 38, "y": 15 }
+    },
+    "volume.unfocusedMaster": {
+        "position": { "x": 16, "y": 17 },
+        "width": 21,
+        "minValue": 0.0,
+        "maxValue": 1.0
+    },
+    "volume.unfocusedMaster.label": {
+        "text": "unfocused",
+        "position": { "x": 6, "y": 17 }
+    },
+    "volume.unfocusedMaster.value": {
+        "position": { "x": 38, "y": 17 }
+    },
+    "volume.music": {
+        "position": { "x": 16, "y": 19 },
+        "width": 21,
+        "minValue": 0.0,
+        "maxValue": 1.0
+    },
+    "volume.music.label": {
+        "text": "MUSIC",
+        "position": { "x": 4, "y": 19 }
+    },
+    "volume.music.value": {
+        "position": { "x": 38, "y": 19 }
+    },
+    "volume.sfx": {
+        "position": { "x": 16, "y": 21 },
+        "width": 21,
+        "minValue": 0.0,
+        "maxValue": 1.0
+    },
+    "volume.sfx.label": {
+        "text": "EFFECTS",
+        "position": { "x": 4, "y": 21 }
+    },
+    "volume.sfx.value": {
+        "position": { "x": 38, "y": 21 }
+    },
+    "header.video": {
+        "text": "[ VIDEO ]",
+        "position": { "x": 2, "y": 23 }
+    },
+    "bloom": {
+        "position": { "x": 4, "y": 25 },
+        "size": { "x": 5, "y": 1 },
+        "text": "BLOOM"
+    },
+    "fullscreen": {
+        "position": { "x": 4, "y": 27 },
+        "size": { "x": 10, "y": 1 },
+        "text": "FULLSCREEN"
+    },
+    "fpsLimit": {
+        "position": { "x": 14, "y": 29 },
+        "width": 19,
+        "minValue": -1,
+        "maxValue": 17
+    },
+    "fpsLimit.label": {
+        "text": "FPS LIMIT",
+        "position": { "x": 4, "y": 29 }
+    },
+    "fpsLimit.value": {
+        "position": { "x": 34, "y": 29 }
+    },
+    "header.advanced": {
+        "text": "[ ADVANCED ]",
+        "position": { "x": 2, "y": 31 }
+    },
+    "showFps": {
+        "position": { "x": 4, "y": 33 },
+        "size": { "x": 8, "y": 1 },
+        "text": "SHOW FPS"
+    },
+    "header.packs": {
+        "text": "[ RESOURCE PACKS ]",
+        "position": { "x": 125, "y": 13 },
+        "align": "right"
+    },
+    "pack.description": {
+        "position": { "x": 125, "y": 46 },
+        "size": { "x": 40, "y": 0 },
+        "align": "right",
+        "wrap": true
+    },
+    "packs": {
+        "position": { "x": 96, "y": 15 },
+        "size": { "x": 30, "y": 30 },
+        "template": "resourcePackItem"
+    },
+    "back": {
+        "position": { "x": 2, "y": 69 },
+        "size": { "x": 4, "y": 1 },
+        "text": "BACK"
+    },
+    "apply": {
+        "position": { "x": 7, "y": 69 },
+        "size": { "x": 5, "y": 1 },
+        "text": "APPLY"
+    },
+    "reload": {
+        "position": { "x": 96, "y": 13 },
+        "size": { "x": 6, "y": 1 },
+        "text": "RELOAD"
+    }
+}

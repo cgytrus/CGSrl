@@ -1,0 +1,46 @@
+﻿{
+    "frameLeft": { },
+    "frameRight": {
+        "position": { "x": 127, "y": 0 },
+        "align": "right"
+    },
+    "title": {
+        "text": "trolling lmao xdfgdrjhigu hsertiuhgo srtoiuserhtjguio9srjut5h8i9srj5thyiu aaaaaaaaaaaaaaaaaa                \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\na                                                                    ",
+        "position": { "x": 63, "y": 16 },
+        "align": "middle"
+    },
+    "play": {
+        "position": { "x": 62, "y": 34 },
+        "size": { "x": 4, "y": 1 },
+        "text": "PLAY"
+    },
+    "settings": {
+        "position": { "x": 60, "y": 36 },
+        "size": { "x": 8, "y": 1 },
+        "text": "SETTINGS"
+    },
+    "exit": {
+        "position": { "x": 55, "y": 38 },
+        "size": { "x": 18, "y": 1 },
+        "text": "keep yourself safe"
+    },
+    "sfml": {
+        "text": "SFML",
+        "position": { "x": 1, "y": 1 },
+        "size": { "x": 4, "y": 1 }
+    },
+    "github": {
+        "text": "GITHUB",
+        "position": { "x": 6, "y": 1 },
+        "size": { "x": 6, "y": 1 }
+    },
+    "discord": {
+        "text": "DISCORD",
+        "position": { "x": 13, "y": 1 },
+        "size": { "x": 7, "y": 1 }
+    },
+    "versions": {
+        "position": { "x": 1, "y": 2 },
+        "text": "CGSRL v{0}\nEngine v{1}\nRenderer v{6}\nAudio v{5}\nUI v{7}\nAbstractions v{2}\nUtil v{3}\nCommon v{4}"
+    }
+}
