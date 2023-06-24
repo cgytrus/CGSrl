@@ -11,7 +11,7 @@ public class Settings {
     public float unfocusedMasterVolume { get; set; } = 0.2f;
     public float musicVolume { get; set; } = 1f;
     public float sfxVolume { get; set; } = 1f;
-    public bool bloom { get; set; } = true;
+    public bool bloom { get; set; }
     public bool fullscreen { get; set; }
     public int fpsLimit { get; set; }
     public bool showFps { get; set; }
