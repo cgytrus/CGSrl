@@ -57,6 +57,10 @@ public class GameScreen : LayoutResource, IScreen {
 
         _level.Add(new PlayerObject());
 
+        _level.Add(new BoxObject { position = new Vector2Int(2, 0) });
+        _level.Add(new BoxObject { position = new Vector2Int(2, 1) });
+        _level.Add(new BoxObject { position = new Vector2Int(2, 3) });
+
         for(int i = -5; i <= 5; i++) {
             _level.Add(new WallObject { position = new Vector2Int(i, -5) });
         }

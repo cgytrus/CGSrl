@@ -50,7 +50,10 @@ public class PlayerObject : LevelObject {
                 moveY = 0;
         }
 
-        position += new Vector2Int(moveX, moveY);
+        Vector2Int move = new(moveX, moveY);
+        if(level.TryGetObjectAt(position + move, out PushableObject? pushable) && !pushable.TryMove(move))
+            return;
+        position += move;
         if(Math.Abs(screenPosition.x) > 5)
             level.cameraPosition += new Vector2Int(moveX, 0);
         if(Math.Abs(screenPosition.y) > 5)
