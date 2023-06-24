@@ -84,7 +84,7 @@ public class Game : ScreenGame {
         _settings.ApplyVolumes();
 
         return new RendererSettings {
-            title = "CGSRL",
+            title = "CGSrl",
             width = 128,
             height = 72,
             framerate = _settings.fpsLimit,
