@@ -1,4 +1,6 @@
-﻿using Cgsrl.Server.Networking;
+﻿using System.Net;
+
+using Cgsrl.Server.Networking;
 using Cgsrl.Shared.Environment;
 
 using PER.Abstractions;
@@ -19,7 +21,7 @@ public class Game : IGame, IDisposable {
     public void Setup() {
         _level = new Level(Core.engine.renderer, Core.engine.input, Core.engine.audio, Core.engine.resources);
 
-        _server = new TcpServer(new TcpServerOptions(_level) { Host = "127.0.0.1", Port = 12420 });
+        _server = new TcpServer(new TcpServerOptions(_level) { Host = IPAddress.Any.ToString(), Port = 12420 });
 
         for(int y = -20; y <= 20; y++)
             for(int x = -20; x <= 20; x++)
