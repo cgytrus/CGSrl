@@ -14,7 +14,7 @@ public class Settings {
     public bool bloom { get; set; }
     public bool fullscreen { get; set; }
     public int fpsLimit { get; set; }
-    public bool showFps { get; set; }
+    public bool showFps { get; set; } = true;
 
     public static Settings Load(string path) {
         if(!File.Exists(path))
