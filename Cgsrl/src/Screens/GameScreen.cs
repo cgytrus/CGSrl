@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
+using System.Threading.Tasks;
 
-using Cgsrl.Environment;
+using Cgsrl.Networking;
 using Cgsrl.Screens.Templates;
+using Cgsrl.Shared.Environment;
+
+using LiteNetwork.Client;
+
+using NLog;
 
 using PER.Abstractions;
 using PER.Abstractions.Audio;
@@ -13,15 +17,15 @@ using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
 using PER.Abstractions.UI;
-using PER.Util;
 
-using PRR.UI;
 using PRR.UI.Resources;
 
 namespace Cgsrl.Screens;
 
-public class GameScreen : LayoutResource, IScreen {
+public class GameScreen : LayoutResource, IScreen, IDisposable {
     public const string GlobalId = "layouts/game";
+
+    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     protected override IRenderer renderer => Core.engine.renderer;
     protected override IInput input => Core.engine.input;
@@ -40,54 +44,66 @@ public class GameScreen : LayoutResource, IScreen {
     }
 
     private readonly IResources _resources;
+    private TcpClient? _client;
     private Level? _level;
+
+    private bool _connected;
 
     public GameScreen(IResources resources) => _resources = resources;
 
-    public override void Load(string id) {
-        base.Load(id);
-
-        _level = new Level(renderer, input, audio, _resources);
-
-        for(int y = -20; y <= 20; y++) {
-            for(int x = -20; x <= 20; x++) {
-                _level.Add(new FloorObject { position = new Vector2Int(x, y) });
-            }
+    public bool TryConnect(string address) {
+        string host = "127.0.0.1";
+        int port = 12420;
+        if(address.Length > 0) {
+            string[] parts = address.Split(':');
+            host = parts[0];
+            if(parts.Length >= 2 && int.TryParse(parts[1], out int parsedPort))
+                port = parsedPort;
         }
 
-        _level.Add(new PlayerObject());
+        _client = new TcpClient(new LiteClientOptions { Host = host, Port = port });
+        _client.Error += (_, ex) => {
+            logger.Error(ex);
+        };
+        _client.Connected += (_, _) => {
+            _connected = true;
+            logger.Info("connected");
+        };
+        _client.Disconnected += (_, _) => {
+            _connected = false;
+            logger.Info("disconnected");
+        };
+        Task connectTask = _client.ConnectAsync();
 
-        _level.Add(new BoxObject { position = new Vector2Int(2, 0) });
-        _level.Add(new BoxObject { position = new Vector2Int(2, 1) });
-        _level.Add(new BoxObject { position = new Vector2Int(2, 3) });
-
-        for(int i = -5; i <= 5; i++) {
-            _level.Add(new WallObject { position = new Vector2Int(i, -5) });
-        }
-        for(int i = 0; i < 100; i++) {
-            _level.Add(new WallObject { position = new Vector2Int(i, -8) });
-        }
-        for(int i = 0; i < 30; i++) {
-            _level.Add(new WallObject { position = new Vector2Int(8, i - 7) });
-        }
-
-        _level.Add(new EffectObject {
-            position = new Vector2Int(3, -10),
-            size = new Vector2Int(10, 10),
-            effect = renderer.formattingEffects["glitch"]
-        });
-        _level.Add(new EffectObject {
-            position = new Vector2Int(-12, -24),
-            size = new Vector2Int(6, 9),
-            effect = renderer.formattingEffects["glitch"]
-        });
+        if(connectTask.Wait(10000) && _connected)
+            return true;
+        logger.Error($"Failed to connect to {host}:{port}");
+        Close();
+        return false;
     }
 
-    public void Open() { }
-    public void Close() { }
+    public void Open() {
+        _level = new Level(renderer, input, audio, _resources);
+    }
+
+    public void Close() {
+        _level = null;
+        if(_client is null)
+            return;
+        if(_connected) {
+            Task disconnectTask = _client.DisconnectAsync();
+            disconnectTask.Wait();
+            _connected = false;
+        }
+        _client.Dispose();
+        _client = null;
+    }
 
     public void Update(TimeSpan time) {
-        _level?.Update(time);
+        if(_level is not null) {
+            _client?.ProcessPackets(_level);
+            _level.Update(time);
+        }
         foreach((string _, Element element) in elements)
             element.Update(time);
         if(input.KeyPressed(KeyCode.Escape) &&
@@ -95,5 +111,11 @@ public class GameScreen : LayoutResource, IScreen {
             Core.engine.game.SwitchScreen(screen);
     }
 
-    public void Tick(TimeSpan time) => _level?.Tick(time);
+    public void Tick(TimeSpan time) { }
+
+    public void Dispose() {
+        _client?.Dispose();
+        _client = null;
+        GC.SuppressFinalize(this);
+    }
 }

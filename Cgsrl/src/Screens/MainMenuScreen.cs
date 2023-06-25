@@ -26,6 +26,7 @@ public class MainMenuScreen : LayoutResource, IScreen {
         { "frameRight", typeof(LayoutResourceText) },
         { "title", typeof(LayoutResourceText) },
         { "play", typeof(LayoutResourceButton) },
+        { "play.address", typeof(LayoutResourceInputField) },
         { "settings", typeof(LayoutResourceButton) },
         { "exit", typeof(LayoutResourceButton) },
         { "sfml", typeof(LayoutResourceButton) },
@@ -46,10 +47,13 @@ public class MainMenuScreen : LayoutResource, IScreen {
     public override void Load(string id) {
         base.Load(id);
 
-        GetElement<Button>("play").onClick += (_, _) => {
+        InputField playAddress = GetElement<InputField>("play.address");
+        void OnPlay(object? sender, EventArgs eventArgs) {
             if(Core.engine.resources.TryGetResource(GameScreen.GlobalId, out GameScreen? screen))
-                Core.engine.game.SwitchScreen(screen);
-        };
+                Core.engine.game.SwitchScreen(screen, () => screen.TryConnect(playAddress.value ?? ""));
+        }
+        GetElement<Button>("play").onClick += OnPlay;
+        playAddress.onSubmit += OnPlay;
 
         GetElement<Button>("settings").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(SettingsScreen.GlobalId, out SettingsScreen? screen))

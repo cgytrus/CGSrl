@@ -1,7 +1,7 @@
 ﻿using PER.Abstractions.Environment;
 using PER.Util;
 
-namespace Cgsrl.Environment;
+namespace Cgsrl.Shared.Environment;
 
 public abstract class PushableObject : LevelObject {
     public bool TryMove(Vector2Int delta) {

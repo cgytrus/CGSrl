@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\PER\PER.Abstractions\PER.Abstractions.csproj" />
+      <ProjectReference Include="..\PER\PER.Util\PER.Util.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="LiteNetwork" Version="2.2.0" />
+    </ItemGroup>
+
+</Project>

@@ -9,9 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\PER\PER.Abstractions\PER.Abstractions.csproj" />
+        <ProjectReference Include="..\Cgsrl.Shared\Cgsrl.Shared.csproj" />
         <ProjectReference Include="..\PER\PER.Audio\PER.Audio.csproj" />
-        <ProjectReference Include="..\PER\PER.Util\PER.Util.csproj" />
         <ProjectReference Include="..\PER\PER\PER.csproj" />
         <ProjectReference Include="..\PER\PRR.UI\PRR.UI.csproj" />
         <ProjectReference Include="..\PER\PRR\PRR.csproj" />

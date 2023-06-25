@@ -14,6 +14,11 @@
         "size": { "x": 4, "y": 1 },
         "text": "PLAY"
     },
+    "play.address": {
+        "position": { "x": 67, "y": 34 },
+        "size": { "x": 24, "y": 1 },
+        "placeholder": "address..."
+    },
     "settings": {
         "position": { "x": 60, "y": 36 },
         "size": { "x": 8, "y": 1 },

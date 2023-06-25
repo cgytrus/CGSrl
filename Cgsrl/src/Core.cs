@@ -24,7 +24,7 @@ public static class Core {
 
     public static Engine engine { get; } =
         new(new ResourcesManager(), new Game(), renderer, new InputManager(renderer), new AudioManager()) {
-            tickInterval = TimeSpan.FromSeconds(0.08d)
+            tickInterval = TimeSpan.FromSeconds(-1d) // don't tick
         };
 
     private static void Main() => engine.Reload();

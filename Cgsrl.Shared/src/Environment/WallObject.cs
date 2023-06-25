@@ -1,10 +1,8 @@
-﻿using System;
-
-using PER.Abstractions.Environment;
+﻿using PER.Abstractions.Environment;
 using PER.Abstractions.Rendering;
 using PER.Util;
 
-namespace Cgsrl.Environment;
+namespace Cgsrl.Shared.Environment;
 
 public class WallObject : LevelObject {
     protected override RenderCharacter character { get; } = new('#', Color.transparent, Color.white);
