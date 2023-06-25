@@ -48,12 +48,10 @@ public class MainMenuScreen : LayoutResource, IScreen {
         base.Load(id);
 
         InputField playAddress = GetElement<InputField>("play.address");
-        void OnPlay(object? sender, EventArgs eventArgs) {
+        GetElement<Button>("play").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(GameScreen.GlobalId, out GameScreen? screen))
                 Core.engine.game.SwitchScreen(screen, () => screen.TryConnect(playAddress.value ?? ""));
-        }
-        GetElement<Button>("play").onClick += OnPlay;
-        playAddress.onSubmit += OnPlay;
+        };
 
         GetElement<Button>("settings").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(SettingsScreen.GlobalId, out SettingsScreen? screen))
