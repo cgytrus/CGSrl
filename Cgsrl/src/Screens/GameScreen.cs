@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using Cgsrl.Networking;
 using Cgsrl.Screens.Templates;
-using Cgsrl.Shared.Environment;
 
 using LiteNetwork.Client;
 
@@ -51,7 +51,7 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
 
     public GameScreen(IResources resources) => _resources = resources;
 
-    public bool TryConnect(string address) {
+    public bool TryConnect(string address, [NotNullWhen(false)] out string? error) {
         string host = "127.0.0.1";
         int port = 12420;
         if(address.Length > 0) {
@@ -75,11 +75,22 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
         };
         Task connectTask = _client.ConnectAsync();
 
-        if(connectTask.Wait(10000) && _connected)
-            return true;
-        logger.Error($"Failed to connect to {host}:{port}");
-        Close();
-        return false;
+        if(!connectTask.Wait(10000)) {
+            error = $"Failed to connect to {host}:{port} (connection timed out)";
+            logger.Error(error);
+            Close();
+            return false;
+        }
+
+        if(!_connected) {
+            error = $"Failed to connect to {host}:{port} (connection refused)";
+            logger.Error(error);
+            Close();
+            return false;
+        }
+
+        error = null;
+        return true;
     }
 
     public void Open() {

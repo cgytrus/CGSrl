@@ -44,13 +44,20 @@ public class MainMenuScreen : LayoutResource, IScreen {
         }
     }
 
+    private ConnectionErrorDialogBoxScreen? _connectionErrorDialogBox;
+
     public override void Load(string id) {
         base.Load(id);
 
         InputField playAddress = GetElement<InputField>("play.address");
         GetElement<Button>("play").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(GameScreen.GlobalId, out GameScreen? screen))
-                Core.engine.game.SwitchScreen(screen, () => screen.TryConnect(playAddress.value ?? ""));
+                Core.engine.game.SwitchScreen(screen, () => {
+                    if(screen.TryConnect(playAddress.value ?? "", out string? error))
+                        return true;
+                    ShowConnectionError(error);
+                    return false;
+                });
         };
 
         GetElement<Button>("settings").onClick += (_, _) => {
@@ -84,9 +91,31 @@ public class MainMenuScreen : LayoutResource, IScreen {
     public void Close() { }
 
     public void Update(TimeSpan time) {
+        bool prevInputBlock = input.block;
+        input.block = _connectionErrorDialogBox is not null;
+
         foreach((string _, Element element) in elements)
             element.Update(time);
+
+        input.block = prevInputBlock;
+
+        _connectionErrorDialogBox?.Update(time);
     }
 
     public void Tick(TimeSpan time) { }
+
+    private void ShowConnectionError(string error) {
+        if(!Core.engine.resources.TryGetResource(ConnectionErrorDialogBoxScreen.GlobalId,
+            out _connectionErrorDialogBox)) {
+            return;
+        }
+        _connectionErrorDialogBox.onOk += () => Core.engine.game.FadeScreen(CloseConnectionError);
+        _connectionErrorDialogBox.text = error;
+        _connectionErrorDialogBox.Open();
+    }
+
+    private void CloseConnectionError() {
+        _connectionErrorDialogBox?.Close();
+        _connectionErrorDialogBox = null;
+    }
 }

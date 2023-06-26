@@ -1,0 +1,18 @@
+﻿{
+    "title": {
+        "position": { "x": 63, "y": 30 },
+        "text": "CONNECTION ERROR",
+        "align": "middle"
+    },
+    "text": {
+        "position": { "x": 63, "y": 35 },
+        "size": { "x": 42, "y": 11 },
+        "text": "{0}",
+        "align": "middle"
+    },
+    "ok": {
+        "position": { "x": 62, "y": 42 },
+        "size": { "x": 2, "y": 1 },
+        "text": "OK"
+    }
+}

@@ -61,6 +61,8 @@ public class Game : ScreenGame {
         resources.TryAddResource(MainMenuScreen.GlobalId, new MainMenuScreen());
         resources.TryAddResource(SettingsScreen.GlobalId, new SettingsScreen(_settings, resources));
         resources.TryAddResource(GameScreen.GlobalId, new GameScreen(resources));
+
+        resources.TryAddResource(ConnectionErrorDialogBoxScreen.GlobalId, new ConnectionErrorDialogBoxScreen());
     }
 
     public override RendererSettings Loaded() {
