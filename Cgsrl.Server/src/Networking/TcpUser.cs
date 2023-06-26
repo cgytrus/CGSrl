@@ -50,32 +50,44 @@ public class TcpUser : LiteServerUser {
     private bool ProcessPacket(Level level, Packet packet) {
         switch(packet) {
             case AuthorizePacket authorizePacket:
-                AuthorizePacket.AuthError error = authorizePacket.Process(this, level, out _player);
-                switch(error) {
-                    case AuthorizePacket.AuthError.None:
-                        logger.Info($"{_player.displayName} ({_player.username}) authorized");
-                        break;
-                    case AuthorizePacket.AuthError.EmptyUsername:
-                        logger.Info($"{authorizePacket.displayName} has an empty username.");
-                        return false;
-                    case AuthorizePacket.AuthError.EmptyDisplayName:
-                        logger.Info($"{authorizePacket.username} has an empty display name.");
-                        return false;
-                    case AuthorizePacket.AuthError.InvalidUsername:
-                        logger.Info($"{authorizePacket.displayName} ({authorizePacket.username}) has an invalid username.");
-                        return false;
-                    case AuthorizePacket.AuthError.DuplicateUsername:
-                        logger.Info($"{authorizePacket.displayName} ({authorizePacket.username}) has a duplicate username.");
-                        return false;
-                    default:
-                        logger.Info($"{_player.displayName} ({_player.username}) not authorized (unknown error)");
-                        return false;
-                }
+                if(!ProcessAuthorizePacket(level, authorizePacket))
+                    return false;
                 break;
             case PlayerMovePacket playerMovePacket:
                 if(_player is not null)
                     playerMovePacket.Process(_player);
                 break;
+            case CreateObjectPacket createObjectPacket:
+                createObjectPacket.Process(level);
+                break;
+            case RemoveObjectPacket removeObjectPacket:
+                removeObjectPacket.Process(level);
+                break;
+        }
+        return true;
+    }
+
+    private bool ProcessAuthorizePacket(Level level, AuthorizePacket authorizePacket) {
+        AuthorizePacket.AuthError error = authorizePacket.Process(this, level, out _player);
+        switch(error) {
+            case AuthorizePacket.AuthError.None:
+                logger.Info($"{_player.displayName} ({_player.username}) authorized");
+                break;
+            case AuthorizePacket.AuthError.EmptyUsername:
+                logger.Info($"{authorizePacket.displayName} has an empty username.");
+                return false;
+            case AuthorizePacket.AuthError.EmptyDisplayName:
+                logger.Info($"{authorizePacket.username} has an empty display name.");
+                return false;
+            case AuthorizePacket.AuthError.InvalidUsername:
+                logger.Info($"{authorizePacket.displayName} ({authorizePacket.username}) has an invalid username.");
+                return false;
+            case AuthorizePacket.AuthError.DuplicateUsername:
+                logger.Info($"{authorizePacket.displayName} ({authorizePacket.username}) has a duplicate username.");
+                return false;
+            default:
+                logger.Info($"{_player.displayName} ({_player.username}) not authorized (unknown error)");
+                return false;
         }
         return true;
     }

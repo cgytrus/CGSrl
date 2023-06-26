@@ -11,6 +11,8 @@ public abstract record Packet {
             // client to server
             AuthorizePacket.GlobalId => AuthorizePacket.Deserialize(reader),
             PlayerMovePacket.GlobalId => PlayerMovePacket.Deserialize(reader),
+            CreateObjectPacket.GlobalId => CreateObjectPacket.Deserialize(reader),
+            RemoveObjectPacket.GlobalId => RemoveObjectPacket.Deserialize(reader),
 
             // server to client
             AuthorizeErrorPacket.GlobalId => AuthorizeErrorPacket.Deserialize(reader),

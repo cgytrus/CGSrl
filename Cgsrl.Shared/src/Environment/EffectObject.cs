@@ -12,9 +12,10 @@ public class EffectObject : LevelObject {
     public override void Update(TimeSpan time) { }
     public override void Tick(TimeSpan time) { }
     public override void Draw() {
-        for(int y = 0; y < size.y; y++)
-            for(int x = 0; x < size.x; x++)
-                renderer.AddEffect(drawPosition + new Vector2Int(x, y),
+        Vector2Int pos = level.LevelToScreenPosition(position);
+        for(int y = Math.Clamp(pos.y, 0, renderer.height); y < Math.Clamp(pos.y + size.y, 0, renderer.height); y++)
+            for(int x = Math.Clamp(pos.x, 0, renderer.width); x < Math.Clamp(pos.x + size.x, 0, renderer.width); x++)
+                renderer.AddEffect(new Vector2Int(x, y),
                     renderer.formattingEffects.TryGetValue(this.effect, out IEffect? effect) ? effect : null);
     }
 

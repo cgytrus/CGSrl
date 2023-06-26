@@ -19,6 +19,7 @@ using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
 using PER.Abstractions.UI;
+using PER.Util;
 
 using PRR.UI;
 using PRR.UI.Resources;
@@ -36,7 +37,14 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
 
     protected override string layoutName => "game";
     protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
-        { "players", typeof(LayoutResourceListBox<PlayerObject>) }
+        { "players", typeof(LayoutResourceListBox<PlayerObject>) },
+        { "spawner.objects.floor", typeof(LayoutResourceButton) },
+        { "spawner.objects.wall", typeof(LayoutResourceButton) },
+        { "spawner.objects.box", typeof(LayoutResourceButton) },
+        { "spawner.objects.effect", typeof(LayoutResourceButton) },
+        { "spawner.width", typeof(LayoutResourceInputField) },
+        { "spawner.height", typeof(LayoutResourceInputField) },
+        { "spawner.effect", typeof(LayoutResourceInputField) }
     };
 
     protected override IEnumerable<KeyValuePair<string, Type>> dependencyTypes {
@@ -56,14 +64,26 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
 
     private ListBox<PlayerObject>? _players;
 
+    private LevelObject _spawnerCurrent;
+    private readonly FloorObject _spawnerFloor = new() { layer = -1 };
+    private readonly WallObject _spawnerWall = new() { layer = 1 };
+    private readonly BoxObject _spawnerBox = new() { layer = 1 };
+    private readonly EffectObject _spawnerEffect = new() { layer = 2 };
+
     public GameScreen(IResources resources) {
         _resources = resources;
         resources.TryAddResource(PlayerListTemplate.GlobalId, new PlayerListTemplate());
+        _spawnerCurrent = _spawnerWall;
     }
 
     public override void Load(string id) {
         base.Load(id);
         _players = GetElement<ListBox<PlayerObject>>("players");
+
+        GetElement<Button>("spawner.objects.floor").onClick += (_, _) => _spawnerCurrent = _spawnerFloor;
+        GetElement<Button>("spawner.objects.wall").onClick += (_, _) => _spawnerCurrent = _spawnerWall;
+        GetElement<Button>("spawner.objects.box").onClick += (_, _) => _spawnerCurrent = _spawnerBox;
+        GetElement<Button>("spawner.objects.effect").onClick += (_, _) => _spawnerCurrent = _spawnerEffect;
     }
 
     public bool TryConnect(string address, string username, string displayName,
@@ -145,11 +165,48 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
             UpdatePlayerList();
             _level.Update(time);
         }
+
         foreach((string _, Element element) in elements)
             element.Update(time);
+
         if(input.KeyPressed(KeyCode.Escape) &&
             Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
             Core.engine.game.SwitchScreen(screen);
+
+        UpdateSpawner();
+    }
+
+    private void UpdateSpawner() {
+        if(_level is null || _client is null)
+            return;
+
+        if(input.mousePosition is { x: >= 100, y: <= 10 })
+            return;
+
+        if(input.MouseButtonPressed(MouseButton.Left) &&
+            !_level.HasObjectAt(_level.ScreenToLevelPosition(input.mousePosition), _spawnerCurrent.GetType()))
+            CreateCurrentSpawnerObject();
+        if(input.MouseButtonPressed(MouseButton.Right) &&
+            _level.TryGetObjectAt(_level.ScreenToLevelPosition(input.mousePosition), out LevelObject? obj) &&
+            obj is not PlayerObject)
+            _client.Send(new RemoveObjectPacket(obj.id).Serialize());
+    }
+
+    private void CreateCurrentSpawnerObject() {
+        if(_level is null || _client is null)
+            return;
+
+        _spawnerCurrent.id = Guid.NewGuid();
+        _spawnerCurrent.position = _level.ScreenToLevelPosition(input.mousePosition);
+
+        if(_spawnerCurrent is EffectObject effectObject) {
+            if(int.TryParse(GetElement<InputField>("spawner.width").value, out int width) &&
+                int.TryParse(GetElement<InputField>("spawner.height").value, out int height))
+                effectObject.size = new Vector2Int(width, height);
+            effectObject.effect = GetElement<InputField>("spawner.effect").value ?? "none";
+        }
+
+        _client.Send(new CreateObjectPacket(_spawnerCurrent).Serialize());
     }
 
     private void UpdatePlayerList() {
