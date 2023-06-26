@@ -55,8 +55,10 @@ public class Game : IGame, IDisposable {
     }
 
     public void Tick(TimeSpan time) {
-        _server?.ProcessPackets();
-        _level?.Tick(time);
+        if(_server is null || _level is null)
+            return;
+        _server.ProcessPackets(_level);
+        _level.Tick(time);
     }
 
     public void Finish() {

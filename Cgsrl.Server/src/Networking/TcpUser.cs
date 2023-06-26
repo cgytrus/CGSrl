@@ -3,13 +3,14 @@
 using Cgsrl.Shared.Environment;
 using Cgsrl.Shared.Networking.Packets;
 using Cgsrl.Shared.Networking.Packets.ClientToServer;
-using Cgsrl.Shared.Networking.Packets.ServerToClient;
 
 using JetBrains.Annotations;
 
 using LiteNetwork.Server;
 
 using NLog;
+
+using PER.Abstractions.Environment;
 
 namespace Cgsrl.Server.Networking;
 
@@ -27,29 +28,55 @@ public class TcpUser : LiteServerUser {
 
     protected override void OnConnected() {
         logger.Info("connected");
-        if(Context?.Options is not TcpServerOptions options)
-            return;
-        _player = new PlayerObject { connection = this };
-        options.level.Add(_player);
-        Send(new JoinedPacket(_player.id, options.level.objects.Count, options.level.objects.Values).Serialize());
     }
 
     protected override void OnDisconnected() {
-        logger.Info("disconnected");
-        if(Context?.Options is not TcpServerOptions options)
+        if(Context?.Options is not TcpServerOptions options || _player is null)
             return;
-        if(_player is not null)
-            options.level.Remove(_player);
+        options.level.Remove(_player);
+        logger.Info($"{_player.displayName} ({_player.username}) disconnected");
     }
 
-    public void ProcessPackets() {
+    public bool ProcessPackets(Level level) {
         while(_packets.TryDequeue(out Packet? packet)) {
-            switch(packet) {
-                case PlayerMovePacket playerMovePacket:
-                    if(_player is not null)
-                        playerMovePacket.Process(_player);
-                    break;
-            }
+            if(ProcessPacket(level, packet))
+                continue;
+            _packets.Clear();
+            return false;
         }
+        return true;
+    }
+
+    private bool ProcessPacket(Level level, Packet packet) {
+        switch(packet) {
+            case AuthorizePacket authorizePacket:
+                AuthorizePacket.AuthError error = authorizePacket.Process(this, level, out _player);
+                switch(error) {
+                    case AuthorizePacket.AuthError.None:
+                        logger.Info($"{_player.displayName} ({_player.username}) authorized");
+                        break;
+                    case AuthorizePacket.AuthError.EmptyUsername:
+                        logger.Info($"{authorizePacket.displayName} has an empty username.");
+                        return false;
+                    case AuthorizePacket.AuthError.EmptyDisplayName:
+                        logger.Info($"{authorizePacket.username} has an empty display name.");
+                        return false;
+                    case AuthorizePacket.AuthError.InvalidUsername:
+                        logger.Info($"{authorizePacket.displayName} ({authorizePacket.username}) has an invalid username.");
+                        return false;
+                    case AuthorizePacket.AuthError.DuplicateUsername:
+                        logger.Info($"{authorizePacket.displayName} ({authorizePacket.username}) has a duplicate username.");
+                        return false;
+                    default:
+                        logger.Info($"{_player.displayName} ({_player.username}) not authorized (unknown error)");
+                        return false;
+                }
+                break;
+            case PlayerMovePacket playerMovePacket:
+                if(_player is not null)
+                    playerMovePacket.Process(_player);
+                break;
+        }
+        return true;
     }
 }

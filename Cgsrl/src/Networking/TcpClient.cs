@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using Cgsrl.Shared.Networking.Packets;
@@ -21,9 +21,14 @@ public class TcpClient : LiteClient {
         return Task.CompletedTask;
     }
 
-    public void ProcessPackets(Level level) {
+    public bool ProcessPackets(Level level, [NotNullWhen(false)] out string? error) {
+        error = null;
         while(_packets.TryDequeue(out Packet? packet)) {
             switch(packet) {
+                case AuthorizeErrorPacket authorizeErrorPacket:
+                    error = authorizeErrorPacket.error;
+                    _packets.Clear();
+                    return false;
                 case JoinedPacket joinedPacket:
                     joinedPacket.Process(this, level);
                     break;
@@ -38,5 +43,6 @@ public class TcpClient : LiteClient {
                     break;
             }
         }
+        return true;
     }
 }

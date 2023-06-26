@@ -10,9 +10,25 @@ using PER.Util;
 namespace Cgsrl.Shared.Environment;
 
 public class PlayerObject : LevelObject {
-    protected override RenderCharacter character { get; } = new('@', Color.transparent, new Color(0, 255, 255, 255));
+    protected override RenderCharacter character => new('@',
+        highlighted ? new Color(1f, 1f, 0f, 0.2f) : Color.transparent, new Color(0, 255, 255, 255));
 
     public LiteConnection? connection { get; set; }
+
+    public bool highlighted { get; set; }
+
+    public string username {
+        get => _username;
+        init => _username = value;
+    }
+
+    public string displayName {
+        get => _displayName;
+        init => _displayName = value;
+    }
+
+    private string _username = "";
+    private string _displayName = "";
 
     public Vector2Int move { get; set; }
 
@@ -77,5 +93,15 @@ public class PlayerObject : LevelObject {
         if(level.TryGetObjectAt(position + move, out PushableObject? pushable) && !pushable.TryMove(move))
             return;
         position += move;
+    }
+
+    public override void CustomSerialize(BinaryWriter writer) {
+        writer.Write(username);
+        writer.Write(displayName);
+    }
+
+    public override void CustomDeserialize(BinaryReader reader) {
+        _username = reader.ReadString();
+        _displayName = reader.ReadString();
     }
 }

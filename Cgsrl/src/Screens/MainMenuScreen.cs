@@ -27,6 +27,8 @@ public class MainMenuScreen : LayoutResource, IScreen {
         { "title", typeof(LayoutResourceText) },
         { "play", typeof(LayoutResourceButton) },
         { "play.address", typeof(LayoutResourceInputField) },
+        { "play.username", typeof(LayoutResourceInputField) },
+        { "play.displayName", typeof(LayoutResourceInputField) },
         { "settings", typeof(LayoutResourceButton) },
         { "exit", typeof(LayoutResourceButton) },
         { "sfml", typeof(LayoutResourceButton) },
@@ -44,21 +46,32 @@ public class MainMenuScreen : LayoutResource, IScreen {
         }
     }
 
+    private Settings _settings;
+
     private ConnectionErrorDialogBoxScreen? _connectionErrorDialogBox;
+
+    public MainMenuScreen(Settings settings) => _settings = settings;
 
     public override void Load(string id) {
         base.Load(id);
 
         InputField playAddress = GetElement<InputField>("play.address");
+        InputField playUsername = GetElement<InputField>("play.username");
+        InputField playDisplayName = GetElement<InputField>("play.displayName");
         GetElement<Button>("play").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(GameScreen.GlobalId, out GameScreen? screen))
                 Core.engine.game.SwitchScreen(screen, () => {
-                    if(screen.TryConnect(playAddress.value ?? "", out string? error))
+                    if(screen.TryConnect(playAddress.value ?? "", playUsername.value ?? "", playDisplayName.value ?? "",
+                        out string? error))
                         return true;
                     ShowConnectionError(error);
                     return false;
                 });
         };
+
+        playAddress.onSubmit += (_, _) => _settings.address = playAddress.value ?? "";
+        playUsername.onSubmit += (_, _) => _settings.username = playUsername.value ?? "";
+        playDisplayName.onSubmit += (_, _) => _settings.displayName = playDisplayName.value ?? "";
 
         GetElement<Button>("settings").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(SettingsScreen.GlobalId, out SettingsScreen? screen))
@@ -87,7 +100,12 @@ public class MainMenuScreen : LayoutResource, IScreen {
                 Core.utilVersion, Core.commonVersion, Core.audioVersion, Core.rendererVersion, Core.uiVersion);
     }
 
-    public void Open() { }
+    public void Open() {
+        GetElement<InputField>("play.address").value = _settings.address;
+        GetElement<InputField>("play.username").value = _settings.username;
+        GetElement<InputField>("play.displayName").value = _settings.displayName;
+    }
+
     public void Close() { }
 
     public void Update(TimeSpan time) {
@@ -104,7 +122,7 @@ public class MainMenuScreen : LayoutResource, IScreen {
 
     public void Tick(TimeSpan time) { }
 
-    private void ShowConnectionError(string error) {
+    public void ShowConnectionError(string error) {
         if(!Core.engine.resources.TryGetResource(ConnectionErrorDialogBoxScreen.GlobalId,
             out _connectionErrorDialogBox)) {
             return;

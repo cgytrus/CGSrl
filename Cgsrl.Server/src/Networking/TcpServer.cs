@@ -10,6 +10,8 @@ namespace Cgsrl.Server.Networking;
 
 public class TcpServer : LiteServer<TcpUser> {
     private readonly Level _level;
+    private readonly List<LiteConnection> _usersToDisconnect = new();
+
     public TcpServer(TcpServerOptions options) : base(options) {
         _level = options.level;
         _level.objectAdded += obj => {
@@ -30,11 +32,15 @@ public class TcpServer : LiteServer<TcpUser> {
         };
     }
 
-    public void ProcessPackets() {
+    public void ProcessPackets(Level level) {
         foreach(LiteConnection connection in Users) {
             if(connection is not TcpUser user)
                 continue;
-            user.ProcessPackets();
+            if(!user.ProcessPackets(level))
+                _usersToDisconnect.Add(user);
         }
+        foreach(LiteConnection user in _usersToDisconnect)
+            DisconnectUser(user);
+        _usersToDisconnect.Clear();
     }
 }

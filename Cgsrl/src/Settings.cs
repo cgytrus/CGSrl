@@ -6,6 +6,9 @@ using PER.Abstractions.Audio;
 namespace Cgsrl;
 
 public class Settings {
+    public string address { get; set; } = "";
+    public string username { get; set; } = "";
+    public string displayName { get; set; } = "";
     public string[] packs { get; set; } = { "Default" };
     public float masterVolume { get; set; } = 0.2f;
     public float unfocusedMasterVolume { get; set; } = 0.2f;

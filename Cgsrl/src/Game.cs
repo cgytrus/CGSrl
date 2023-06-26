@@ -58,7 +58,7 @@ public class Game : ScreenGame {
 
         resources.TryAddResource(DialogBoxPaletteResource.GlobalId, new DialogBoxPaletteResource());
 
-        resources.TryAddResource(MainMenuScreen.GlobalId, new MainMenuScreen());
+        resources.TryAddResource(MainMenuScreen.GlobalId, new MainMenuScreen(_settings));
         resources.TryAddResource(SettingsScreen.GlobalId, new SettingsScreen(_settings, resources));
         resources.TryAddResource(GameScreen.GlobalId, new GameScreen(resources));
 

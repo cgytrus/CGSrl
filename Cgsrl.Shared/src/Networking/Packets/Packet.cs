@@ -9,9 +9,11 @@ public abstract record Packet {
         BinaryReader reader = new(stream);
         return reader.ReadString() switch {
             // client to server
+            AuthorizePacket.GlobalId => AuthorizePacket.Deserialize(reader),
             PlayerMovePacket.GlobalId => PlayerMovePacket.Deserialize(reader),
 
             // server to client
+            AuthorizeErrorPacket.GlobalId => AuthorizeErrorPacket.Deserialize(reader),
             JoinedPacket.GlobalId => JoinedPacket.Deserialize(reader),
             ObjectAddedPacket.GlobalId => ObjectAddedPacket.Deserialize(reader),
             ObjectRemovedPacket.GlobalId => ObjectRemovedPacket.Deserialize(reader),
