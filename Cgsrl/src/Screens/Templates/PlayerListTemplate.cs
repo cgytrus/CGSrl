@@ -24,11 +24,15 @@ public class PlayerListTemplate : ListBoxTemplateResource<PlayerObject> {
     };
 
     private class Template : BasicTemplate {
-        public Template(PlayerListTemplate resource) : base(resource) { }
+        private readonly string _formatStr;
+
+        public Template(PlayerListTemplate resource) : base(resource) =>
+            _formatStr = GetElement<Text>("name").text ?? "{1}";
 
         public override void UpdateWithItem(int index, PlayerObject item, int width) {
-            Text nameButton = GetElement<Text>("name");
-            nameButton.text = string.Format(nameButton.text ?? "{1}", item.username, item.displayName);
+            Text nameText = GetElement<Text>("name");
+            nameText.text = string.Format(_formatStr, item.username, item.displayName);
+            item.text = nameText;
         }
     }
 

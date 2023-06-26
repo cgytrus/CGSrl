@@ -212,8 +212,13 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
     private void UpdatePlayerList() {
         if(_players is null)
             return;
-        for(int i = 0; i < _players.items.Count; i++)
-            _players[i].highlighted = input.mousePosition.InBounds(_players.elements[i].bounds);
+        foreach(PlayerObject player in _players.items) {
+            if(player.text is not Text text) {
+                logger.Warn($"{player.username} doesnt have text????");
+                continue;
+            }
+            player.highlighted = input.mousePosition.InBounds(text.bounds);
+        }
     }
 
     private void SwitchToMainMenuWithError(string error) {

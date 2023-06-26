@@ -32,6 +32,9 @@ public class PlayerObject : LevelObject {
 
     public Vector2Int move { get; set; }
 
+    // client-side only, have to do this cuz it's in the shared project and i don't wanna depend on PRR.UI here xd
+    public object? text { get; set; }
+
     private Vector2Int _prevClientMove;
     private Vector2Int _clientMove;
 
