@@ -32,13 +32,18 @@ public class ChatMessageListTemplate : ListBoxTemplateResource<ChatMessage> {
         public Template(ChatMessageListTemplate resource) : base(resource) {
             Text text = GetElement<Text>("text");
             _formatStr = text.text ?? "{1}";
-            text.formatting['\0'] = text.formatting['\0'] with { effect = new FadeEffect() };
-            text.formatting['0'] = text.formatting['0'] with { effect = new FadeEffect() };
         }
 
         public override void UpdateWithItem(int index, ChatMessage item, int width) {
-            item.element = GetElement<Text>("text");
-            item.element.text = string.Format(_formatStr, item.player?.displayName ?? "\f0SYSTEM\f\0", item.text);
+            Text text = GetElement<Text>("text");
+            text.text = string.Format(_formatStr, item.player?.displayName ?? "\f0SYSTEM\f\0", item.text);
+            if(item.element == text)
+                return;
+            item.element = text;
+            text.formatting['\0'] = text.formatting['\0'] with { effect = new FadeEffect() };
+            text.formatting['0'] = text.formatting['0'] with { effect = new FadeEffect() };
+            text.formatting['1'] = text.formatting['1'] with { effect = new FadeEffect() };
+            text.formatting['2'] = text.formatting['2'] with { effect = new FadeEffect() };
         }
 
         public override void MoveTo(Vector2Int origin, int index, Vector2Int size) {
