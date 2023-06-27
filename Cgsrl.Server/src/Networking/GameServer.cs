@@ -1,4 +1,6 @@
-﻿using Cgsrl.Shared.Environment;
+﻿using System.Net;
+
+using Cgsrl.Shared.Environment;
 using Cgsrl.Shared.Networking;
 
 using Lidgren.Network;
@@ -18,7 +20,11 @@ public class GameServer {
     public GameServer(Level<SyncedLevelObject> level, int port) {
         _level = level;
 
-        NetPeerConfiguration config = new("CGSrl") { Port = port };
+        NetPeerConfiguration config = new("CGSrl") {
+            LocalAddress = IPAddress.Any,
+            Port = port,
+            EnableUPnP = false
+        };
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
         config.EnableMessageType(NetIncomingMessageType.StatusChanged);
         config.EnableMessageType(NetIncomingMessageType.Data);
