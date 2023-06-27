@@ -18,6 +18,7 @@ using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
 using PER.Abstractions.UI;
+using PER.Common.Effects;
 using PER.Util;
 
 using PRR.UI;
@@ -28,6 +29,10 @@ namespace Cgsrl.Screens;
 public class GameScreen : LayoutResource, IScreen {
     public const string GlobalId = "layouts/game";
 
+    private const float MessageFadeInTime = 0.5f;
+    private const double MessageStayTime = 60d;
+    private const float MessageFadeOutTime = 5f;
+
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     protected override IRenderer renderer => Core.engine.renderer;
@@ -37,6 +42,8 @@ public class GameScreen : LayoutResource, IScreen {
     protected override string layoutName => "game";
     protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
         { "players", typeof(LayoutResourceListBox<PlayerObject>) },
+        { "chat.messages", typeof(LayoutResourceListBox<ChatMessage>) },
+        { "chat.input", typeof(LayoutResourceInputField) },
         { "spawner.objects.floor", typeof(LayoutResourceButton) },
         { "spawner.objects.wall", typeof(LayoutResourceButton) },
         { "spawner.objects.box", typeof(LayoutResourceButton) },
@@ -51,6 +58,7 @@ public class GameScreen : LayoutResource, IScreen {
             foreach(KeyValuePair<string, Type> pair in base.dependencyTypes)
                 yield return pair;
             yield return new KeyValuePair<string, Type>(PlayerListTemplate.GlobalId, typeof(PlayerListTemplate));
+            yield return new KeyValuePair<string, Type>(ChatMessageListTemplate.GlobalId, typeof(ChatMessageListTemplate));
         }
     }
 
@@ -62,6 +70,8 @@ public class GameScreen : LayoutResource, IScreen {
     private Level<SyncedLevelObject>? _level;
 
     private ListBox<PlayerObject>? _players;
+    private ListBox<ChatMessage>? _messages;
+    private InputField? _chatInput;
 
     private SyncedLevelObject _spawnerCurrent;
     private readonly FloorObject _spawnerFloor = new() { layer = -1 };
@@ -69,18 +79,30 @@ public class GameScreen : LayoutResource, IScreen {
     private readonly BoxObject _spawnerBox = new() { layer = 1 };
     private readonly EffectObject _spawnerEffect = new() { layer = 2 };
 
+    private bool _prevEscapePressed;
     private bool _prevLeftPressed;
     private bool _prevRightPressed;
 
     public GameScreen(IResources resources) {
         _resources = resources;
         resources.TryAddResource(PlayerListTemplate.GlobalId, new PlayerListTemplate());
+        resources.TryAddResource(ChatMessageListTemplate.GlobalId, new ChatMessageListTemplate());
         _spawnerCurrent = _spawnerWall;
     }
 
     public override void Load(string id) {
         base.Load(id);
         _players = GetElement<ListBox<PlayerObject>>("players");
+        _messages = GetElement<ListBox<ChatMessage>>("chat.messages");
+
+        _chatInput = GetElement<InputField>("chat.input");
+        _chatInput.onSubmit += (_, _) => {
+            SendChatMessage();
+            _chatInput.value = null;
+        };
+        _chatInput.onCancel += (_, _) => {
+            _chatInput.value = null;
+        };
 
         GetElement<Button>("spawner.objects.floor").onClick += (_, _) => _spawnerCurrent = _spawnerFloor;
         GetElement<Button>("spawner.objects.wall").onClick += (_, _) => _spawnerCurrent = _spawnerWall;
@@ -88,24 +110,6 @@ public class GameScreen : LayoutResource, IScreen {
         GetElement<Button>("spawner.objects.effect").onClick += (_, _) => _spawnerCurrent = _spawnerEffect;
 
         _level = new Level<SyncedLevelObject>(renderer, input, audio, _resources);
-        _client = new GameClient(_level);
-        _client.onConnect += () => {
-            _connecting = false;
-            _lastError = null;
-        };
-        _client.onDisconnect += (reason, isError) => {
-            _level.Reset();
-            _players?.Clear();
-            if(_connecting) {
-                _connecting = false;
-                if(isError)
-                    _lastError = reason;
-            }
-            else if(isError)
-                SwitchToMainMenuWithError(reason);
-            else if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
-                Core.engine.game.SwitchScreen(screen);
-        };
         _level.objectAdded += obj => {
             if(obj is PlayerObject player)
                 _players?.Add(player);
@@ -114,6 +118,10 @@ public class GameScreen : LayoutResource, IScreen {
             if(obj is PlayerObject player)
                 _players?.Remove(player);
         };
+
+        _client = new GameClient(_level, _messages);
+        _client.onConnect += Connected;
+        _client.onDisconnect += Disconnected;
     }
 
     public override void Unload(string id) {
@@ -148,21 +156,62 @@ public class GameScreen : LayoutResource, IScreen {
         return _lastError is null;
     }
 
+    private void Connected() {
+        _connecting = false;
+        _lastError = null;
+    }
+
+    private void Disconnected(string reason, bool isError) {
+        _level?.Reset();
+        _players?.Clear();
+        _messages?.Clear();
+        if(_connecting) {
+            _connecting = false;
+            if(isError)
+                _lastError = reason;
+        }
+        else if(isError)
+            SwitchToMainMenuWithError(reason);
+        else if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
+            Core.engine.game.SwitchScreen(screen);
+    }
+
     public void Open() { }
     public void Close() { }
 
     public void Update(TimeSpan time) {
+        bool prevBlock = input.block;
+        bool block = _chatInput?.typing ?? false;
+
+        input.block = block;
         if(_client is not null && _level is not null) {
             _client.ProcessMessages();
             UpdatePlayerList();
+            UpdateChatMessageList();
             _level.Update(time);
         }
+        input.block = prevBlock;
 
         foreach((string _, Element element) in elements)
             element.Update(time);
 
-        if(input.KeyPressed(KeyCode.Escape))
+        if(block) {
+            _prevEscapePressed = input.KeyPressed(KeyCode.Escape);
+            _prevLeftPressed = input.MouseButtonPressed(MouseButton.Left);
+            _prevRightPressed = input.MouseButtonPressed(MouseButton.Right);
+            return;
+        }
+
+        bool escapePressed = input.KeyPressed(KeyCode.Escape);
+        if(!_prevEscapePressed && escapePressed)
             _client?.Disconnect();
+        _prevEscapePressed = escapePressed;
+
+        if(_chatInput?.currentState == ClickableElement.State.Clicked) {
+            _prevLeftPressed = input.MouseButtonPressed(MouseButton.Left);
+            _prevRightPressed = input.MouseButtonPressed(MouseButton.Right);
+            return;
+        }
 
         UpdateSpawner();
     }
@@ -229,6 +278,41 @@ public class GameScreen : LayoutResource, IScreen {
             }
             player.highlighted = input.mousePosition.InBounds(text.bounds);
         }
+    }
+
+    private void UpdateChatMessageList() {
+        if(_messages is null)
+            return;
+        foreach(ChatMessage message in _messages.items)
+            UpdateChatMessage(message);
+    }
+    private void UpdateChatMessage(ChatMessage message) {
+        if(_messages is null)
+            return;
+        if(message.element is null) {
+            logger.Warn("message doesnt have element????");
+            return;
+        }
+        if(message.player is not null)
+            message.player.highlighted = message.player.highlighted ||
+                input.mousePosition.InBounds(_messages.bounds) &&
+                input.mousePosition.InBounds(message.element.bounds);
+        if(message.element.formatting['\0'].effect is not FadeEffect { fading: false } fade)
+            return;
+        if(NetTime.Now - message.time >= MessageStayTime)
+            fade.Start(MessageFadeOutTime, float.PositiveInfinity, () => _messages.Remove(message));
+        else if(message.isNew)
+            fade.Start(0f, MessageFadeInTime, () => message.isNew = false);
+    }
+
+    private void SendChatMessage() {
+        if(_client is null || _chatInput is null || string.IsNullOrEmpty(_chatInput.value))
+            return;
+        NetOutgoingMessage msg = _client.peer.CreateMessage();
+        msg.Write((byte)CtsDataType.ChatMessage);
+        msg.WriteTime(false);
+        msg.Write(_chatInput.value);
+        _client.peer.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
     }
 
     private static void SwitchToMainMenuWithError(string error) {

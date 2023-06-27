@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net;
 
 using Cgsrl.Shared.Environment;
 using Cgsrl.Shared.Networking;
@@ -9,6 +8,8 @@ using Lidgren.Network;
 using NLog;
 
 using PER.Abstractions.Environment;
+
+using PRR.UI;
 
 namespace Cgsrl.Networking;
 
@@ -24,9 +25,11 @@ public class GameClient {
     public event Action<string, bool>? onDisconnect;
 
     private readonly Level<SyncedLevelObject> _level;
+    private readonly ListBox<ChatMessage> _messages;
 
-    public GameClient(Level<SyncedLevelObject> level) {
+    public GameClient(Level<SyncedLevelObject> level, ListBox<ChatMessage> messages) {
         _level = level;
+        _messages = messages;
 
         NetPeerConfiguration config = new("CGSrl");
         config.EnableMessageType(NetIncomingMessageType.StatusChanged);
@@ -105,6 +108,9 @@ public class GameClient {
             case StcDataType.ObjectChanged:
                 ProcessObjectChanged(msg);
                 break;
+            case StcDataType.ChatMessage:
+                ProcessChatMessage(msg);
+                break;
             default:
                 logger.Error("Unhandled STC data type: {}", type);
                 break;
@@ -145,5 +151,23 @@ public class GameClient {
             return;
         }
         obj.ReadDataFrom(msg);
+    }
+
+    private void ProcessChatMessage(NetIncomingMessage msg) {
+        Guid id = msg.ReadGuid();
+        if(id == Guid.Empty) {
+            _messages.Insert(0, new ChatMessage(null, msg.ReadTime(false), msg.ReadString()));
+            return;
+        }
+        if(!_level.objects.TryGetValue(id, out SyncedLevelObject? obj)) {
+            logger.Warn("Object {} doesn't exist, ignoring chat message!", id);
+            return;
+        }
+        if(obj is not PlayerObject player) {
+            logger.Warn("Object {} is not a player, ignoring chat message!", id);
+            return;
+        }
+        _messages.Insert(0, new ChatMessage(player, msg.ReadTime(false), msg.ReadString()));
+        logger.Info($"[CHAT] [{player.username}] {_messages[0].text}");
     }
 }

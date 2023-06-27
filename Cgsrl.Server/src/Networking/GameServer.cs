@@ -105,6 +105,7 @@ public class GameServer {
         connection.Approve();
 
         logger.Info($"[{username}] connection approved");
+        SendSystemMessage($"{displayName} is joining the game.");
     }
 
     private void ProcessStatusChanged(NetConnectionStatus status, string reason, NetConnection connection) {
@@ -125,6 +126,8 @@ public class GameServer {
 
                 _level.Add(player);
                 logger.Info($"[{player.username}] connected");
+                SendSystemMessage($"{player.displayName} joined the game.");
+                SendSystemMessageTo(connection, "welcome :>"); // TODO: chat motd
                 break;
             }
             case NetConnectionStatus.Disconnected: {
@@ -134,6 +137,7 @@ public class GameServer {
                 }
                 _level.Remove(player);
                 logger.Info($"[{player.username}] disconnected ({reason})");
+                SendSystemMessage($"{player.displayName} left the game. ({reason})");
                 break;
             }
         }
@@ -149,6 +153,9 @@ public class GameServer {
                 break;
             case CtsDataType.PlayerMove:
                 ProcessPlayerMove(msg);
+                break;
+            case CtsDataType.ChatMessage:
+                ProcessChatMessage(msg);
                 break;
             default:
                 logger.Error("Unhandled CTS data type: {}", type);
@@ -184,5 +191,38 @@ public class GameServer {
             return;
         }
         player.move = msg.ReadVector2Int();
+    }
+
+    private void ProcessChatMessage(NetIncomingMessage msg) {
+        if(msg.SenderConnection.Tag is not PlayerObject player) {
+            logger.Warn("Tag was not player, ignoring chat message!");
+            return;
+        }
+        NetOutgoingMessage message = _peer.CreateMessage();
+        message.Write((byte)StcDataType.ChatMessage);
+        message.Write(player.id);
+        message.WriteTime(msg.ReadTime(false), false);
+        string text = msg.ReadString();
+        message.Write(text);
+        _peer.SendToAll(message, NetDeliveryMethod.ReliableOrdered, 0);
+        logger.Info($"[CHAT] [{player.username}] {text}");
+    }
+
+    private void SendSystemMessage(string text) {
+        NetOutgoingMessage message = _peer.CreateMessage();
+        message.Write((byte)StcDataType.ChatMessage);
+        message.Write(Guid.Empty);
+        message.WriteTime(false);
+        message.Write(text);
+        _peer.SendToAll(message, NetDeliveryMethod.ReliableOrdered, 0);
+    }
+
+    private void SendSystemMessageTo(NetConnection connection, string text) {
+        NetOutgoingMessage message = _peer.CreateMessage();
+        message.Write((byte)StcDataType.ChatMessage);
+        message.Write(Guid.Empty);
+        message.WriteTime(false);
+        message.Write(text);
+        connection.SendMessage(message, NetDeliveryMethod.ReliableOrdered, 0);
     }
 }
