@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="LiteNetwork" Version="2.2.0" />
+      <PackageReference Include="SpaceWizards.Lidgren.Network" Version="0.2.5" />
     </ItemGroup>
 
 </Project>

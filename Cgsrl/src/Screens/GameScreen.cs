@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 
 using Cgsrl.Networking;
 using Cgsrl.Screens.Templates;
 using Cgsrl.Shared.Environment;
-using Cgsrl.Shared.Networking.Packets.ClientToServer;
+using Cgsrl.Shared.Networking;
 
-using LiteNetwork.Client;
+using Lidgren.Network;
 
 using NLog;
 
@@ -26,7 +25,7 @@ using PRR.UI.Resources;
 
 namespace Cgsrl.Screens;
 
-public class GameScreen : LayoutResource, IScreen, IDisposable {
+public class GameScreen : LayoutResource, IScreen {
     public const string GlobalId = "layouts/game";
 
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
@@ -55,20 +54,23 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
         }
     }
 
-    private string _address = "";
-    private bool _connected;
+    private bool _connecting;
+    private string? _lastError;
 
     private readonly IResources _resources;
-    private TcpClient? _client;
-    private Level? _level;
+    private GameClient? _client;
+    private Level<SyncedLevelObject>? _level;
 
     private ListBox<PlayerObject>? _players;
 
-    private LevelObject _spawnerCurrent;
+    private SyncedLevelObject _spawnerCurrent;
     private readonly FloorObject _spawnerFloor = new() { layer = -1 };
     private readonly WallObject _spawnerWall = new() { layer = 1 };
     private readonly BoxObject _spawnerBox = new() { layer = 1 };
     private readonly EffectObject _spawnerEffect = new() { layer = 2 };
+
+    private bool _prevLeftPressed;
+    private bool _prevRightPressed;
 
     public GameScreen(IResources resources) {
         _resources = resources;
@@ -84,57 +86,26 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
         GetElement<Button>("spawner.objects.wall").onClick += (_, _) => _spawnerCurrent = _spawnerWall;
         GetElement<Button>("spawner.objects.box").onClick += (_, _) => _spawnerCurrent = _spawnerBox;
         GetElement<Button>("spawner.objects.effect").onClick += (_, _) => _spawnerCurrent = _spawnerEffect;
-    }
 
-    public bool TryConnect(string address, string username, string displayName,
-        [NotNullWhen(false)] out string? error) {
-        string host = "127.0.0.1";
-        int port = 12420;
-        if(address.Length > 0) {
-            string[] parts = address.Split(':');
-            host = parts[0];
-            if(parts.Length >= 2 && int.TryParse(parts[1], out int parsedPort))
-                port = parsedPort;
-        }
-
-        _address = $"{host}:{port}";
-
-        _client = new TcpClient(new LiteClientOptions { Host = host, Port = port });
-        _client.Error += (_, ex) => {
-            logger.Error(ex);
+        _level = new Level<SyncedLevelObject>(renderer, input, audio, _resources);
+        _client = new GameClient(_level);
+        _client.onConnect += () => {
+            _connecting = false;
+            _lastError = null;
         };
-        _client.Connected += (_, _) => {
-            _connected = true;
-            logger.Info($"Connected to {_address}");
-            _client.Send(new AuthorizePacket(username, displayName).Serialize());
+        _client.onDisconnect += (reason, isError) => {
+            _level.Reset();
+            _players?.Clear();
+            if(_connecting) {
+                _connecting = false;
+                if(isError)
+                    _lastError = reason;
+            }
+            else if(isError)
+                SwitchToMainMenuWithError(reason);
+            else if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
+                Core.engine.game.SwitchScreen(screen);
         };
-        _client.Disconnected += (_, _) => {
-            _connected = false;
-            logger.Info($"Disconnected from {_address}");
-        };
-        Task connectTask = _client.ConnectAsync();
-
-        if(!connectTask.Wait(10000)) {
-            error = $"Failed to connect to {_address} (connection timed out)";
-            logger.Error(error);
-            Close();
-            return false;
-        }
-
-        if(!_connected) {
-            error = $"Failed to connect to {_address} (connection refused)";
-            logger.Error(error);
-            Close();
-            return false;
-        }
-
-        error = null;
-        return true;
-    }
-
-    public void Open() {
-        _players?.Clear();
-        _level = new Level(renderer, input, audio, _resources);
         _level.objectAdded += obj => {
             if(obj is PlayerObject player)
                 _players?.Add(player);
@@ -145,23 +116,44 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
         };
     }
 
-    public void Close() {
-        _level = null;
-        if(_client is null)
-            return;
-        if(_connected) {
-            Task disconnectTask = _client.DisconnectAsync();
-            disconnectTask.Wait();
-            _connected = false;
-        }
-        _client.Dispose();
+    public override void Unload(string id) {
+        base.Unload(id);
+        _client?.Finish();
         _client = null;
+        _level = null;
     }
+
+    public bool TryConnect(string address, string username, string displayName,
+        [NotNullWhen(false)] out string? error) {
+        if(_client is null) {
+            error = "client doesn't exist?????";
+            return false;
+        }
+
+        string host = "127.0.0.1";
+        int port = 12420;
+        if(address.Length > 0) {
+            string[] parts = address.Split(':');
+            host = parts[0];
+            if(parts.Length >= 2 && int.TryParse(parts[1], out int parsedPort))
+                port = parsedPort;
+        }
+
+        _client.Connect(host, port, username, displayName);
+        _connecting = true;
+        // do minimal processing until we connect or disconnect
+        while(_connecting)
+            _client.ProcessMessages();
+        error = _lastError;
+        return _lastError is null;
+    }
+
+    public void Open() { }
+    public void Close() { }
 
     public void Update(TimeSpan time) {
         if(_client is not null && _level is not null) {
-            if(!_client.ProcessPackets(_level, out string? error))
-                SwitchToMainMenuWithError(error);
+            _client.ProcessMessages();
             UpdatePlayerList();
             _level.Update(time);
         }
@@ -169,9 +161,8 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
         foreach((string _, Element element) in elements)
             element.Update(time);
 
-        if(input.KeyPressed(KeyCode.Escape) &&
-            Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
-            Core.engine.game.SwitchScreen(screen);
+        if(input.KeyPressed(KeyCode.Escape))
+            _client?.Disconnect();
 
         UpdateSpawner();
     }
@@ -183,13 +174,17 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
         if(input.mousePosition is { x: >= 100, y: <= 10 })
             return;
 
-        if(input.MouseButtonPressed(MouseButton.Left) &&
+        bool leftPressed = input.MouseButtonPressed(MouseButton.Left);
+        bool rightPressed = input.MouseButtonPressed(MouseButton.Right);
+
+        if(!_prevLeftPressed && leftPressed &&
             !_level.HasObjectAt(_level.ScreenToLevelPosition(input.mousePosition), _spawnerCurrent.GetType()))
             CreateCurrentSpawnerObject();
-        if(input.MouseButtonPressed(MouseButton.Right) &&
-            _level.TryGetObjectAt(_level.ScreenToLevelPosition(input.mousePosition), out LevelObject? obj) &&
-            obj is not PlayerObject)
-            _client.Send(new RemoveObjectPacket(obj.id).Serialize());
+        if(!_prevRightPressed && rightPressed)
+            RemoveCurrentObject();
+
+        _prevLeftPressed = leftPressed;
+        _prevRightPressed = rightPressed;
     }
 
     private void CreateCurrentSpawnerObject() {
@@ -206,7 +201,22 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
             effectObject.effect = GetElement<InputField>("spawner.effect").value ?? "none";
         }
 
-        _client.Send(new CreateObjectPacket(_spawnerCurrent).Serialize());
+        NetOutgoingMessage msg = _client.peer.CreateMessage(SyncedLevelObject.PreallocSize);
+        msg.Write((byte)CtsDataType.AddObject);
+        _spawnerCurrent.WriteTo(msg);
+        _client.peer.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+    }
+
+    private void RemoveCurrentObject() {
+        if(_client is null || _level is null ||
+            !_level.TryGetObjectAt(_level.ScreenToLevelPosition(input.mousePosition), out SyncedLevelObject? obj) &&
+            obj is not PlayerObject)
+            return;
+
+        NetOutgoingMessage msg = _client.peer.CreateMessage(17);
+        msg.Write((byte)CtsDataType.RemoveObject);
+        msg.Write(obj.id);
+        _client.peer.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
     }
 
     private void UpdatePlayerList() {
@@ -221,19 +231,13 @@ public class GameScreen : LayoutResource, IScreen, IDisposable {
         }
     }
 
-    private void SwitchToMainMenuWithError(string error) {
+    private static void SwitchToMainMenuWithError(string error) {
         if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
             Core.engine.game.SwitchScreen(screen, () => {
-                screen.ShowConnectionError($"Failed to connect to {_address} ({error})");
+                screen.ShowConnectionError(error);
                 return true;
             });
     }
 
     public void Tick(TimeSpan time) { }
-
-    public void Dispose() {
-        _client?.Dispose();
-        _client = null;
-        GC.SuppressFinalize(this);
-    }
 }

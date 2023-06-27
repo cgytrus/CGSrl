@@ -1,10 +1,13 @@
-﻿using PER.Abstractions.Environment;
+﻿using Cgsrl.Shared.Networking;
+
+using Lidgren.Network;
+
 using PER.Abstractions.Rendering;
 using PER.Util;
 
 namespace Cgsrl.Shared.Environment;
 
-public class EffectObject : LevelObject {
+public class EffectObject : SyncedLevelObject {
     public Vector2Int size { get; set; }
     public string effect { get; set; } = "none";
 
@@ -19,14 +22,15 @@ public class EffectObject : LevelObject {
                     renderer.formattingEffects.TryGetValue(this.effect, out IEffect? effect) ? effect : null);
     }
 
-    public override void CustomSerialize(BinaryWriter writer) {
-        writer.Write(size.x);
-        writer.Write(size.y);
-        writer.Write(effect);
+    public override void WriteDataTo(NetBuffer buffer) {
+        base.WriteDataTo(buffer);
+        buffer.Write(size);
+        buffer.Write(effect);
     }
 
-    public override void CustomDeserialize(BinaryReader reader) {
-        size = new Vector2Int(reader.ReadInt32(), reader.ReadInt32());
-        effect = reader.ReadString();
+    public override void ReadDataFrom(NetBuffer buffer) {
+        base.ReadDataFrom(buffer);
+        size = buffer.ReadVector2Int();
+        effect = buffer.ReadString();
     }
 }

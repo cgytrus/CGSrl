@@ -1,19 +1,18 @@
-﻿using Cgsrl.Shared.Networking.Packets.ClientToServer;
+﻿using Cgsrl.Shared.Networking;
 
-using LiteNetwork;
+using Lidgren.Network;
 
-using PER.Abstractions.Environment;
 using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Util;
 
 namespace Cgsrl.Shared.Environment;
 
-public class PlayerObject : LevelObject {
+public class PlayerObject : SyncedLevelObject {
     protected override RenderCharacter character => new('@',
         highlighted ? new Color(1f, 1f, 0f, 0.2f) : Color.transparent, new Color(0, 255, 255, 255));
 
-    public LiteConnection? connection { get; set; }
+    public NetConnection? connection { get; set; }
 
     public bool highlighted { get; set; }
 
@@ -30,13 +29,11 @@ public class PlayerObject : LevelObject {
     private string _username = "";
     private string _displayName = "";
 
+    private Vector2Int _prevMove;
     public Vector2Int move { get; set; }
 
     // client-side only, have to do this cuz it's in the shared project and i don't wanna depend on PRR.UI here xd
     public object? text { get; set; }
-
-    private Vector2Int _prevClientMove;
-    private Vector2Int _clientMove;
 
     private Vector2Int _prevPosition;
 
@@ -53,10 +50,13 @@ public class PlayerObject : LevelObject {
             moveY++;
         if(input.KeyPressed(KeyCode.W))
             moveY--;
-        _clientMove = new Vector2Int(moveX, moveY);
-        if(_clientMove != _prevClientMove) {
-            connection.Send(new PlayerMovePacket(_clientMove).Serialize());
-            _prevClientMove = _clientMove;
+        move = new Vector2Int(moveX, moveY);
+        if(move != _prevMove) {
+            NetOutgoingMessage msg = connection.Peer.CreateMessage(1 + sizeof(int) * 2);
+            msg.Write((byte)CtsDataType.PlayerMove);
+            msg.Write(move);
+            connection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+            _prevMove = move;
         }
 
         if(position == _prevPosition)
@@ -99,13 +99,15 @@ public class PlayerObject : LevelObject {
         position += move;
     }
 
-    public override void CustomSerialize(BinaryWriter writer) {
-        writer.Write(username);
-        writer.Write(displayName);
+    public override void WriteDataTo(NetBuffer buffer) {
+        base.WriteDataTo(buffer);
+        buffer.Write(username);
+        buffer.Write(displayName);
     }
 
-    public override void CustomDeserialize(BinaryReader reader) {
-        _username = reader.ReadString();
-        _displayName = reader.ReadString();
+    public override void ReadDataFrom(NetBuffer buffer) {
+        base.ReadDataFrom(buffer);
+        _username = buffer.ReadString();
+        _displayName = buffer.ReadString();
     }
 }

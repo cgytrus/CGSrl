@@ -46,7 +46,7 @@ public class MainMenuScreen : LayoutResource, IScreen {
         }
     }
 
-    private Settings _settings;
+    private readonly Settings _settings;
 
     private ConnectionErrorDialogBoxScreen? _connectionErrorDialogBox;
 
