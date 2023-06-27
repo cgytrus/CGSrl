@@ -40,10 +40,12 @@ public class ChatMessageListTemplate : ListBoxTemplateResource<ChatMessage> {
             if(item.element == text)
                 return;
             item.element = text;
-            text.formatting['\0'] = text.formatting['\0'] with { effect = new FadeEffect() };
-            text.formatting['0'] = text.formatting['0'] with { effect = new FadeEffect() };
-            text.formatting['1'] = text.formatting['1'] with { effect = new FadeEffect() };
-            text.formatting['2'] = text.formatting['2'] with { effect = new FadeEffect() };
+            FadeEffect fade = new();
+            text.effect = fade;
+            text.formatting['\0'] = text.formatting['\0'] with { effect = fade };
+            text.formatting['0'] = text.formatting['0'] with { effect = fade };
+            text.formatting['1'] = text.formatting['1'] with { effect = fade };
+            text.formatting['2'] = text.formatting['2'] with { effect = fade };
         }
 
         public override void MoveTo(Vector2Int origin, int index, Vector2Int size) {

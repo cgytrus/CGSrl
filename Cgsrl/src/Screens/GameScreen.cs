@@ -297,7 +297,7 @@ public class GameScreen : LayoutResource, IScreen {
             message.player.highlighted = message.player.highlighted ||
                 input.mousePosition.InBounds(_messages.bounds) &&
                 input.mousePosition.InBounds(message.element.bounds);
-        if(message.element.formatting['\0'].effect is not FadeEffect { fading: false } fade)
+        if(message.element.effect is not FadeEffect { fading: false } fade)
             return;
         if(NetTime.Now - message.time >= MessageStayTime)
             fade.Start(MessageFadeOutTime, float.PositiveInfinity, () => _messages.Remove(message));
