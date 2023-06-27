@@ -157,6 +157,7 @@ public class GameClient {
         Guid id = msg.ReadGuid();
         if(id == Guid.Empty) {
             _messages.Insert(0, new ChatMessage(null, msg.ReadTime(false), msg.ReadString()));
+            logger.Info($"[CHAT] [SYSTEM] {_messages[0].text}");
             return;
         }
         if(!_level.objects.TryGetValue(id, out SyncedLevelObject? obj)) {

@@ -140,5 +140,8 @@
     "button_settings.apply_hover": "settings",
     "button_settings.apply_click": "dark_settings",
     "button_settings.reload_hover": "settings",
-    "button_settings.reload_click": "dark_settings"
+    "button_settings.reload_click": "dark_settings",
+    "chat_system_message": "light_gray",
+    "chat_joining_message": "dark_gray",
+    "chat_joined_left_message": "yellow"
 }

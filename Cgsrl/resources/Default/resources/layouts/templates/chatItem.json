@@ -2,6 +2,17 @@
     "text": {
         "position": { "x": 0, "y": 0 },
         "size": { "x": 36, "y": 1 },
-        "text": "[{0}] {1}"
+        "text": "[{0}] {1}",
+        "formatting": {
+            "0": {
+                "foregroundColor": "chat_system_message"
+            },
+            "1": {
+                "foregroundColor": "chat_joining_message"
+            },
+            "2": {
+                "foregroundColor": "chat_joined_left_message"
+            }
+        }
     }
 }
