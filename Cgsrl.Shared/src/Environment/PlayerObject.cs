@@ -124,12 +124,13 @@ public class PlayerObject : SyncedLevelObject {
                 moveY = 0;
         }
 
+        PushableObject? pushable;
         Vector2Int move = new(moveX, moveY);
-        if(level.TryGetObjectAt(position + move, out PushableObject? pushable) && !pushable.TryMove(move))
-            return;
         if(!level.HasObjectAt<IceObject>(position)) {
             _iceMoveTime = 0;
             _iceMoveSpeed = 0;
+            if(level.TryGetObjectAt(position + move, out pushable) && !pushable.TryMove(move))
+                return;
             position += move;
             _lastNonZeroMove = move;
             return;
@@ -150,6 +151,8 @@ public class PlayerObject : SyncedLevelObject {
                 _iceMoveTime = 0;
             }
         }
+        if(level.TryGetObjectAt(position + move, out pushable) && !pushable.TryMove(move))
+            return;
         position += move;
     }
 
