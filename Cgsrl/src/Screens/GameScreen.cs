@@ -48,6 +48,7 @@ public class GameScreen : LayoutResource, IScreen {
         { "players", typeof(LayoutResourceListBox<PlayerObject>) },
         { "chat.messages", typeof(LayoutResourceListBox<ChatMessage>) },
         { "chat.input", typeof(LayoutResourceInputField) },
+        { "info", typeof(LayoutResourceText) },
         { "spawner.objects.floor", typeof(LayoutResourceButton) },
         { "spawner.objects.wall", typeof(LayoutResourceButton) },
         { "spawner.objects.box", typeof(LayoutResourceButton) },
@@ -83,6 +84,9 @@ public class GameScreen : LayoutResource, IScreen {
     private ListBox<PlayerObject>? _players;
     private ListBox<ChatMessage>? _messages;
     private InputField? _chatInput;
+
+    private Text? _infoText;
+    private string _infoFormat = "{0} {1} {2}";
 
     private SyncedLevelObject _spawnerCurrent;
     private readonly FloorObject _spawnerFloor = new() { layer = -1 };
@@ -128,6 +132,9 @@ public class GameScreen : LayoutResource, IScreen {
         _chatInput.onCancel += (_, _) => {
             _chatInput.value = null;
         };
+
+        _infoText = GetElement<Text>("info");
+        _infoFormat = _infoText.text ?? _infoFormat;
 
         GetElement<Button>("spawner.objects.floor").onClick += (_, _) => _spawnerCurrent = _spawnerFloor;
         GetElement<Button>("spawner.objects.wall").onClick += (_, _) => _spawnerCurrent = _spawnerWall;
@@ -241,6 +248,11 @@ public class GameScreen : LayoutResource, IScreen {
                 TimeSpan.FromSeconds(1f / 60f));
             UpdatePlayerList();
             UpdateChatMessageList();
+            if(_infoText is not null)
+                _infoText.text = string.Format(_infoFormat,
+                    input.mousePosition,
+                    _level.ScreenToCameraPosition(input.mousePosition),
+                    _level.ScreenToLevelPosition(input.mousePosition));
             _level.Update(time);
             input.block = prevBlock;
         }
