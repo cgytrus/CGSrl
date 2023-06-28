@@ -55,8 +55,7 @@ public class Commands {
                 string playerCount = _level.objects.Values.Count(o => o is PlayerObject)
                     .ToString(CultureInfo.InvariantCulture);
                 string uptime = _server.uptime.ToString("%d'd '%h'h '%m'm '%s's'", CultureInfo.InvariantCulture);
-                string ping = ((long)TimeSpan.FromSeconds(context.Source?.ping ?? 0f)
-                        .TotalMilliseconds)
+                string ping = ((long)TimeSpan.FromSeconds(context.Source?.ping ?? 0f).TotalMilliseconds)
                     .ToString(CultureInfo.InvariantCulture);
 
                 _server.SendChatMessage(null, context.Source, $"\fbINFO:\f\0 v{Core.version}");

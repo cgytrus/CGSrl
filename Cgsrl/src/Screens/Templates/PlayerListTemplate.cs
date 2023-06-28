@@ -32,8 +32,10 @@ public class PlayerListTemplate : ListBoxTemplateResource<PlayerObject> {
 
         public override void UpdateWithItem(int index, PlayerObject item, int width) {
             Text nameText = GetElement<Text>("name");
+            string ping = ((long)TimeSpan.FromSeconds(item.ping).TotalMilliseconds)
+                .ToString(CultureInfo.InvariantCulture);
             nameText.text = string.Format(_formatStr, item.username, item.displayName,
-                item.ping.ToString(CultureInfo.InvariantCulture));
+                ping.ToString(CultureInfo.InvariantCulture));
             item.text = nameText;
         }
     }
