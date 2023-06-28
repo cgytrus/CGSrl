@@ -127,6 +127,19 @@ public class Commands {
                         return 1;
                     })))
         ), "Teleports you to the specified position.");
+
+        _descriptions.Add(dispatcher.Register(LiteralArgumentBuilder<PlayerObject?>.Literal("kick")
+            .Then(RequiredArgumentBuilder<PlayerObject?, string>.Argument("username", StringArgumentType.String())
+                .Then(RequiredArgumentBuilder<PlayerObject?, string>.Argument("reason", StringArgumentType.String())
+                    .Executes(context => {
+                        KickCommand(context, StringArgumentType.GetString(context, "username"),
+                            StringArgumentType.GetString(context, "reason"));
+                        return 1;
+                    }))
+                .Executes(context => {
+                    KickCommand(context, StringArgumentType.GetString(context, "username"));
+                    return 1;
+                }))), "Kicks the specified player.");
     }
 
     private bool CheckServerPlayer(CommandContext<PlayerObject?> context) {
@@ -224,5 +237,22 @@ public class Commands {
         context.Source.position = position;
         _server.SendChatMessage(null, context.Source,
             $"Teleported \fb{context.Source.displayName}\f\0 to \fb{position.x}, {position.y}");
+    }
+
+    private void KickCommand(CommandContext<PlayerObject?> context, string username,
+        string reason = "Kicked by server owner") {
+        if(!CheckServerPlayer(context))
+            return;
+
+        PlayerObject? player = _level.objects.Values.OfType<PlayerObject>()
+            .FirstOrDefault(ply => ply.username == username);
+        if(player?.connection is null) {
+            _server.SendChatMessage(null, context.Source,
+                $"Invalid argument \fb0\f\0 (player \fb{username}\f\0 not found)");
+            return;
+        }
+
+        player.connection.Disconnect(reason);
+        _server.SendChatMessage(null, context.Source, $"Kicked \fb{player.displayName}");
     }
 }
