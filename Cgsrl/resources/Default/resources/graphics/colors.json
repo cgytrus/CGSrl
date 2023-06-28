@@ -143,5 +143,7 @@
     "button_settings.reload_click": "dark_settings",
     "chat_system_message": "light_gray",
     "chat_joining_message": "dark_gray",
-    "chat_joined_left_message": "yellow"
+    "chat_joined_left_message": "yellow",
+    "chat_command": "dark_gray",
+    "chat_error_message": "red"
 }

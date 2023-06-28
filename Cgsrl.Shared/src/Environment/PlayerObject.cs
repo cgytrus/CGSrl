@@ -26,8 +26,18 @@ public class PlayerObject : SyncedLevelObject {
         init => _displayName = value;
     }
 
+    public float ping {
+        get => _ping;
+        set {
+            if(_ping != value)
+                dirty = true;
+            _ping = value;
+        }
+    }
+
     private string _username = "";
     private string _displayName = "";
+    private float _ping;
 
     private Vector2Int _prevMove;
     public Vector2Int move { get; set; }
@@ -103,11 +113,13 @@ public class PlayerObject : SyncedLevelObject {
         base.WriteDataTo(buffer);
         buffer.Write(username);
         buffer.Write(displayName);
+        buffer.Write(ping);
     }
 
     public override void ReadDataFrom(NetBuffer buffer) {
         base.ReadDataFrom(buffer);
         _username = buffer.ReadString();
         _displayName = buffer.ReadString();
+        _ping = buffer.ReadFloat();
     }
 }

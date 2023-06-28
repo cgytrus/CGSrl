@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 using Cgsrl.Networking;
 
@@ -42,10 +43,9 @@ public class ChatMessageListTemplate : ListBoxTemplateResource<ChatMessage> {
             item.element = text;
             FadeEffect fade = new();
             text.effect = fade;
-            text.formatting['\0'] = text.formatting['\0'] with { effect = fade };
-            text.formatting['0'] = text.formatting['0'] with { effect = fade };
-            text.formatting['1'] = text.formatting['1'] with { effect = fade };
-            text.formatting['2'] = text.formatting['2'] with { effect = fade };
+            ImmutableArray<char> formatters = text.formatting.Keys.ToImmutableArray();
+            foreach(char formatter in formatters)
+                text.formatting[formatter] = text.formatting[formatter] with { effect = fade };
         }
 
         public override void MoveTo(Vector2Int origin, int index, Vector2Int size) {

@@ -8,26 +8,49 @@ using Lidgren.Network;
 using NLog;
 
 using PER.Abstractions.Environment;
+using PER.Util;
 
 namespace Cgsrl.Server.Networking;
 
 public class GameServer {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
+    public TimeSpan uptime => _uptimeStopwatch.time;
+
+    private readonly Stopwatch _uptimeStopwatch = new();
+
     private readonly NetServer _peer;
     private readonly Level<SyncedLevelObject> _level;
+    private readonly Commands _commands;
 
     public GameServer(Level<SyncedLevelObject> level, int port) {
         _level = level;
+        _commands = new Commands(this, level);
 
         NetPeerConfiguration config = new("CGSrl") {
             LocalAddress = IPAddress.Any,
             Port = port,
             EnableUPnP = false
         };
+
         config.EnableMessageType(NetIncomingMessageType.ConnectionApproval);
         config.EnableMessageType(NetIncomingMessageType.StatusChanged);
         config.EnableMessageType(NetIncomingMessageType.Data);
+        config.EnableMessageType(NetIncomingMessageType.UnconnectedData);
+        config.EnableMessageType(NetIncomingMessageType.ConnectionLatencyUpdated);
+
+#if DEBUG
+        config.EnableMessageType(NetIncomingMessageType.DebugMessage);
+        config.EnableMessageType(NetIncomingMessageType.VerboseDebugMessage);
+#else
+        config.DisableMessageType(NetIncomingMessageType.DebugMessage);
+        config.DisableMessageType(NetIncomingMessageType.VerboseDebugMessage);
+#endif
+
+        config.DisableMessageType(NetIncomingMessageType.Receipt);
+        config.DisableMessageType(NetIncomingMessageType.DiscoveryRequest); // enable later
+        config.DisableMessageType(NetIncomingMessageType.DiscoveryResponse); // enable later
+        config.DisableMessageType(NetIncomingMessageType.NatIntroductionSuccess);
 
         _peer = new NetServer(config);
 
@@ -51,11 +74,12 @@ public class GameServer {
         };
 
         _peer.Start();
-
+        _uptimeStopwatch.Reset();
         logger.Info("Server running on port {}", port);
     }
 
     public void Finish() {
+        _uptimeStopwatch.Reset();
         _peer.Shutdown("Server closed");
     }
 
@@ -73,6 +97,9 @@ public class GameServer {
                     break;
                 case NetIncomingMessageType.StatusChanged:
                     ProcessStatusChanged((NetConnectionStatus)msg.ReadByte(), msg.ReadString(), msg.SenderConnection);
+                    break;
+                case NetIncomingMessageType.ConnectionLatencyUpdated:
+                    ProcessConnectionLatencyUpdated(msg.SenderConnection, msg.ReadFloat());
                     break;
                 case NetIncomingMessageType.Data:
                     CtsDataType type = (CtsDataType)msg.ReadByte();
@@ -113,7 +140,7 @@ public class GameServer {
         connection.Approve();
 
         logger.Info($"[{username}] connection approved");
-        SendSystemMessage($"\f1{displayName} is joining the game.");
+        SendChatMessage(null, null, $"\f1{displayName} is joining the game.");
     }
 
     private void ProcessStatusChanged(NetConnectionStatus status, string reason, NetConnection connection) {
@@ -134,8 +161,8 @@ public class GameServer {
 
                 _level.Add(player);
                 logger.Info($"[{player.username}] connected");
-                SendSystemMessage($"{player.displayName} \f2joined the game.");
-                SendSystemMessageTo(connection, "welcome :>"); // TODO: chat motd
+                SendChatMessage(null, null, $"{player.displayName} \f2joined the game.");
+                SendChatMessage(null, player, "welcome :>"); // TODO: chat motd
                 break;
             }
             case NetConnectionStatus.Disconnected: {
@@ -145,10 +172,18 @@ public class GameServer {
                 }
                 _level.Remove(player);
                 logger.Info($"[{player.username}] disconnected ({reason})");
-                SendSystemMessage($"{player.displayName} \f2left the game. \f1({reason})");
+                SendChatMessage(null, null, $"{player.displayName} \f2left the game. \f1({reason})");
                 break;
             }
         }
+    }
+
+    private static void ProcessConnectionLatencyUpdated(NetConnection connection, float roundTripTime) {
+        if(connection.Tag is not PlayerObject player) {
+            logger.Warn("Tag was not player, ignoring ping update!");
+            return;
+        }
+        player.ping = roundTripTime / 2f;
     }
 
     private void ProcessData(CtsDataType type, NetIncomingMessage msg) {
@@ -206,31 +241,42 @@ public class GameServer {
             logger.Warn("Tag was not player, ignoring chat message!");
             return;
         }
+        double time = msg.ReadTime(false);
+        string text = msg.ReadString();
+        if(text.StartsWith('/')) {
+            string command = text[1..];
+            logger.Info($"[{player.username}] Command received: '{command}'");
+            SendChatMessage(player, player, $"\f4{command}");
+            try { _commands.dispatcher.Execute(command, player); }
+            catch(Exception ex) { SendChatMessage(null, player, ErrorMessage(ex.Message)); }
+            return;
+        }
         NetOutgoingMessage message = _peer.CreateMessage();
         message.Write((byte)StcDataType.ChatMessage);
         message.Write(player.id);
-        message.WriteTime(msg.ReadTime(false), false);
-        string text = msg.ReadString();
+        message.WriteTime(time, false);
         message.Write(text);
         _peer.SendToAll(message, NetDeliveryMethod.ReliableOrdered, 0);
         logger.Info($"[CHAT] [{player.username}] {text}");
     }
 
-    private void SendSystemMessage(string text) {
+    // from == null = SYSTEM
+    // to == null = everyone
+    public void SendChatMessage(PlayerObject? from, PlayerObject? to, string text) {
         NetOutgoingMessage message = _peer.CreateMessage();
         message.Write((byte)StcDataType.ChatMessage);
-        message.Write(Guid.Empty);
+        message.Write(from?.id ?? Guid.Empty);
         message.WriteTime(false);
         message.Write(text);
-        _peer.SendToAll(message, NetDeliveryMethod.ReliableOrdered, 0);
+        if(to?.connection is null) {
+            logger.Info($"[CHAT] [{from?.username ?? "SYSTEM"}] {text}");
+            _peer.SendToAll(message, NetDeliveryMethod.ReliableOrdered, 0);
+        }
+        else {
+            logger.Info($"[CHAT] [{from?.username ?? "SYSTEM"} > {to.username}] {text}");
+            to.connection.SendMessage(message, NetDeliveryMethod.ReliableOrdered, 0);
+        }
     }
 
-    private void SendSystemMessageTo(NetConnection connection, string text) {
-        NetOutgoingMessage message = _peer.CreateMessage();
-        message.Write((byte)StcDataType.ChatMessage);
-        message.Write(Guid.Empty);
-        message.WriteTime(false);
-        message.Write(text);
-        connection.SendMessage(message, NetDeliveryMethod.ReliableOrdered, 0);
-    }
+    public static string ErrorMessage(string text) => $"\f3{text}";
 }

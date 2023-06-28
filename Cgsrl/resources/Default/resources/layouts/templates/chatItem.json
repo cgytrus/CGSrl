@@ -12,6 +12,16 @@
             },
             "2": {
                 "foregroundColor": "chat_joined_left_message"
+            },
+            "3": {
+                "foregroundColor": "chat_error_message"
+            },
+            "4": {
+                "foregroundColor": "chat_command",
+                "style": "italic"
+            },
+            "b": {
+                "style": "bold"
             }
         }
     }

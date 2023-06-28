@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 using Cgsrl.Shared.Environment;
 
@@ -31,7 +32,8 @@ public class PlayerListTemplate : ListBoxTemplateResource<PlayerObject> {
 
         public override void UpdateWithItem(int index, PlayerObject item, int width) {
             Text nameText = GetElement<Text>("name");
-            nameText.text = string.Format(_formatStr, item.username, item.displayName);
+            nameText.text = string.Format(_formatStr, item.username, item.displayName,
+                item.ping.ToString(CultureInfo.InvariantCulture));
             item.text = nameText;
         }
     }
