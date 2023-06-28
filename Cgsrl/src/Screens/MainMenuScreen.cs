@@ -58,6 +58,7 @@ public class MainMenuScreen : LayoutResource, IScreen {
         InputField playAddress = GetElement<InputField>("play.address");
         InputField playUsername = GetElement<InputField>("play.username");
         InputField playDisplayName = GetElement<InputField>("play.displayName");
+        GetElement<Button>("play").hotkey = KeyCode.Enter;
         GetElement<Button>("play").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(GameScreen.GlobalId, out GameScreen? screen))
                 Core.engine.game.SwitchScreen(screen, () => {

@@ -105,6 +105,7 @@ public class SettingsScreen : LayoutResource, IScreen {
         LoadVideo();
         LoadAdvanced();
 
+        GetElement<Button>("back").hotkey = KeyCode.Escape;
         GetElement<Button>("back").onClick += (_, _) => {
             if(reload)
                 _reloadScheduled = true;
