@@ -141,7 +141,7 @@ public class GameServer {
         connection.Approve();
 
         logger.Info($"[{username}] connection approved");
-        SendChatMessage(null, null, $"\f1{displayName} is joining the game.");
+        SendChatMessage(null, null, $"\f1{displayName} is joining the game");
     }
 
     private void ProcessStatusChanged(NetConnectionStatus status, string reason, NetConnection connection) {
@@ -162,7 +162,7 @@ public class GameServer {
 
                 _level.Add(player);
                 logger.Info($"[{player.username}] connected");
-                SendChatMessage(null, null, $"{player.displayName} \f2joined the game.");
+                SendChatMessage(null, null, $"{player.displayName} \f2joined the game");
                 SendChatMessage(null, player, "welcome :>"); // TODO: chat motd
                 break;
             }
@@ -173,7 +173,7 @@ public class GameServer {
                 }
                 _level.Remove(player);
                 logger.Info($"[{player.username}] disconnected ({reason})");
-                SendChatMessage(null, null, $"{player.displayName} \f2left the game. \f1({reason})");
+                SendChatMessage(null, null, $"{player.displayName} \f2left the game \f1({reason})");
                 break;
             }
         }
