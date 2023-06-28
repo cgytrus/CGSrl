@@ -42,6 +42,10 @@ public class PlayerObject : SyncedLevelObject {
     private Vector2Int _prevMove;
     public Vector2Int move { get; set; }
 
+    private int _iceMoveTime;
+    private int _iceMoveSpeed;
+    private Vector2Int _lastNonZeroMove;
+
     // client-side only, have to do this cuz it's in the shared project and i don't wanna depend on PRR.UI here xd
     public object? text { get; set; }
 
@@ -85,6 +89,23 @@ public class PlayerObject : SyncedLevelObject {
     public override void Tick(TimeSpan time) {
         int moveX = this.move.x;
         int moveY = this.move.y;
+        bool iceSlowingDown = false;
+        if(moveX == 0 && moveY == 0) {
+            if(level.HasObjectAt<IceObject>(position)) {
+                moveX = _lastNonZeroMove.x;
+                moveY = _lastNonZeroMove.y;
+                iceSlowingDown = _iceMoveSpeed < 4;
+                if(!iceSlowingDown)
+                    return;
+            }
+            else {
+                _iceMoveTime = 0;
+                _iceMoveSpeed = 0;
+                return;
+            }
+        }
+        if(!iceSlowingDown)
+            _lastNonZeroMove = new Vector2Int(moveX, moveY);
 
         bool isDiagonal = moveX != 0 && moveY != 0;
         bool collidesHorizontal = moveX != 0 && level.HasObjectAt<WallObject>(position + new Vector2Int(moveX, 0));
@@ -106,6 +127,29 @@ public class PlayerObject : SyncedLevelObject {
         Vector2Int move = new(moveX, moveY);
         if(level.TryGetObjectAt(position + move, out PushableObject? pushable) && !pushable.TryMove(move))
             return;
+        if(!level.HasObjectAt<IceObject>(position)) {
+            _iceMoveTime = 0;
+            _iceMoveSpeed = 0;
+            position += move;
+            _lastNonZeroMove = move;
+            return;
+        }
+        if(_iceMoveTime < _iceMoveSpeed) {
+            _iceMoveTime++;
+            return;
+        }
+        if(iceSlowingDown) {
+            if(_iceMoveSpeed < 4) {
+                _iceMoveSpeed++;
+                _iceMoveTime = 0;
+            }
+        }
+        else {
+            if(_iceMoveSpeed > 0) {
+                _iceMoveSpeed--;
+                _iceMoveTime = 0;
+            }
+        }
         position += move;
     }
 

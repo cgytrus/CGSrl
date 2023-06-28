@@ -7,7 +7,7 @@ using PER.Abstractions.Environment;
 namespace Cgsrl.Shared.Networking;
 
 public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> {
-    private enum ObjectType { Player, Floor, Wall, Box, Effect }
+    private enum ObjectType { Player, Floor, Wall, Box, Effect, Ice }
 
     //                              id   layer         position          extra
     public const int PreallocSize = 16 + sizeof(int) + sizeof(int) * 2 + 8;
@@ -19,6 +19,7 @@ public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> 
             WallObject => (int)ObjectType.Wall,
             BoxObject => (int)ObjectType.Box,
             EffectObject => (int)ObjectType.Effect,
+            IceObject => (int)ObjectType.Ice,
             _ => int.MaxValue
         });
         WriteDataTo(buffer);
@@ -36,14 +37,15 @@ public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> 
 
     public static SyncedLevelObject Read(NetBuffer buffer) {
         try {
-            ObjectType type = (ObjectType)buffer.ReadInt32();
+            int type = buffer.ReadInt32();
             SyncedLevelObject obj = type switch {
-                ObjectType.Player => new PlayerObject(),
-                ObjectType.Floor => new FloorObject(),
-                ObjectType.Wall => new WallObject(),
-                ObjectType.Box => new BoxObject(),
-                ObjectType.Effect => new EffectObject(),
-                _ => throw new ArgumentOutOfRangeException(nameof(type), type, "")
+                (int)ObjectType.Player => new PlayerObject(),
+                (int)ObjectType.Floor => new FloorObject(),
+                (int)ObjectType.Wall => new WallObject(),
+                (int)ObjectType.Box => new BoxObject(),
+                (int)ObjectType.Effect => new EffectObject(),
+                (int)ObjectType.Ice => new IceObject(),
+                _ => new CorruptedObject()
             };
             obj.id = buffer.ReadGuid();
             obj.ReadDataFrom(buffer);

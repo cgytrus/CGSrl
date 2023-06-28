@@ -55,7 +55,9 @@ public class Game : IGame {
 
         for(int y = -20; y <= 20; y++)
             for(int x = -20; x <= 20; x++)
-                _level.Add(new FloorObject { layer = -1, position = new Vector2Int(x, y) });
+                _level.Add(new IceObject { layer = -1, position = new Vector2Int(x, y) });
+        if(_level.TryGetObjectAt(new Vector2Int(), out IceObject? obj))
+            _level.Remove(obj);
 
         _level.Add(new BoxObject { layer = 1, position = new Vector2Int(2, 0) });
         _level.Add(new BoxObject { layer = 1, position = new Vector2Int(2, 1) });

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 using Cgsrl.Networking;
 using Cgsrl.Screens.Templates;
@@ -53,6 +52,7 @@ public class GameScreen : LayoutResource, IScreen {
         { "spawner.objects.wall", typeof(LayoutResourceButton) },
         { "spawner.objects.box", typeof(LayoutResourceButton) },
         { "spawner.objects.effect", typeof(LayoutResourceButton) },
+        { "spawner.objects.ice", typeof(LayoutResourceButton) },
         { "spawner.width", typeof(LayoutResourceInputField) },
         { "spawner.height", typeof(LayoutResourceInputField) },
         { "spawner.effect", typeof(LayoutResourceInputField) }
@@ -93,6 +93,7 @@ public class GameScreen : LayoutResource, IScreen {
     private readonly WallObject _spawnerWall = new() { layer = 1 };
     private readonly BoxObject _spawnerBox = new() { layer = 1 };
     private readonly EffectObject _spawnerEffect = new() { layer = 2 };
+    private readonly IceObject _spawnerIce = new() { layer = -1 };
 
     private bool _prevEscapePressed;
     private bool _prevLeftPressed;
@@ -140,6 +141,7 @@ public class GameScreen : LayoutResource, IScreen {
         GetElement<Button>("spawner.objects.wall").onClick += (_, _) => _spawnerCurrent = _spawnerWall;
         GetElement<Button>("spawner.objects.box").onClick += (_, _) => _spawnerCurrent = _spawnerBox;
         GetElement<Button>("spawner.objects.effect").onClick += (_, _) => _spawnerCurrent = _spawnerEffect;
+        GetElement<Button>("spawner.objects.ice").onClick += (_, _) => _spawnerCurrent = _spawnerIce;
 
         _level = new Level<SyncedLevelObject>(renderer, input, audio, _resources);
         _level.objectAdded += obj => {
