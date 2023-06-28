@@ -36,6 +36,8 @@ public class GameClient {
 
     private NetIncomingMessage? _joinedMessage;
 
+    private Vector2Int _lastObjPosition;
+
     public GameClient(Level<SyncedLevelObject> level, ListBox<ChatMessage> messages) {
         _level = level;
         _messages = messages;
@@ -169,6 +171,13 @@ public class GameClient {
         if(obj is PlayerObject player && player.username == username)
             player.connection = msg.SenderConnection;
         _level.Add(obj);
+        if(obj is CorruptedObject) {
+            obj.position = _lastObjPosition;
+            string text = $"Received corrupted object, placing it at {obj.position.x},{obj.position.y}!";
+            logger.Warn(text);
+            _messages.Insert(0, new ChatMessage(null, NetTime.Now, $"\f2{text}"));
+        }
+        _lastObjPosition = obj.position;
     }
 
     private void ProcessObjectRemoved(NetBuffer msg) {
