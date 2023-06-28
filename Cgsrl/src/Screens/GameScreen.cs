@@ -238,7 +238,7 @@ public class GameScreen : LayoutResource, IScreen {
         if(_client is not null && _level is not null) {
             input.block = block;
             _client.ProcessMessages(renderer.framerate > 0 ? TimeSpan.FromSeconds(1d / renderer.framerate) :
-                TimeSpan.Zero);
+                TimeSpan.FromSeconds(1f / 60f));
             UpdatePlayerList();
             UpdateChatMessageList();
             _level.Update(time);
