@@ -66,6 +66,15 @@ public class Commands {
                 return 1;
             })), "Prints some info about the server.");
 
+        _descriptions.Add(dispatcher.Register(LiteralArgumentBuilder<PlayerObject?>.Literal("save")
+            .Executes(context => {
+                if(!CheckServerPlayer(context))
+                    return 1;
+                if(Core.engine.game is Game game)
+                    game.SaveLevel();
+                return 1;
+            })), "Saves the level.");
+
         _descriptions.Add(dispatcher.Register(LiteralArgumentBuilder<PlayerObject?>.Literal("players")
             .Then(RequiredArgumentBuilder<PlayerObject?, bool>.Argument("printIp", BoolArgumentType.Bool())
                 .Executes(context => {
@@ -121,7 +130,7 @@ public class Commands {
     }
 
     private bool CheckServerPlayer(CommandContext<PlayerObject?> context) {
-        // server or
+        // server console or local player
         if(context.Source?.connection is null ||
             context.Source.connection.RemoteEndPoint.Address.Equals(IPAddress.Loopback))
             return true;

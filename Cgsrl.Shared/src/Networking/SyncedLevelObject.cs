@@ -13,14 +13,14 @@ public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> 
     public const int PreallocSize = 16 + sizeof(int) + sizeof(int) * 2 + 8;
 
     public void WriteTo(NetBuffer buffer) {
-        buffer.Write((int)(this switch {
-            PlayerObject => ObjectType.Player,
-            FloorObject => ObjectType.Floor,
-            WallObject => ObjectType.Wall,
-            BoxObject => ObjectType.Box,
-            EffectObject => ObjectType.Effect,
-            _ => throw new InvalidOperationException()
-        }));
+        buffer.Write(this switch {
+            PlayerObject => (int)ObjectType.Player,
+            FloorObject => (int)ObjectType.Floor,
+            WallObject => (int)ObjectType.Wall,
+            BoxObject => (int)ObjectType.Box,
+            EffectObject => (int)ObjectType.Effect,
+            _ => int.MaxValue
+        });
         WriteDataTo(buffer);
     }
     public virtual void WriteDataTo(NetBuffer buffer) {

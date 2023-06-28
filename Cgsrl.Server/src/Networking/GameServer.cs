@@ -81,6 +81,7 @@ public class GameServer {
     public void Finish() {
         _uptimeStopwatch.Reset();
         _peer.Shutdown("Server closed");
+        logger.Info("Server stopped");
     }
 
     public void ProcessMessages() {
