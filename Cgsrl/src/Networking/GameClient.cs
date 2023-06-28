@@ -8,6 +8,7 @@ using Lidgren.Network;
 using NLog;
 
 using PER.Abstractions.Environment;
+using PER.Util;
 
 using PRR.UI;
 
@@ -22,10 +23,18 @@ public class GameClient {
     public NetClient peer { get; }
 
     public event Action? onConnect;
+    public event Action? onJoin;
     public event Action<string, bool>? onDisconnect;
+
+    public int totalJoinedObjectCount { get; private set; }
+    public int leftJoinedObjectCount { get; private set; }
 
     private readonly Level<SyncedLevelObject> _level;
     private readonly ListBox<ChatMessage> _messages;
+
+    private readonly Stopwatch _timer = new();
+
+    private NetIncomingMessage? _joinedMessage;
 
     public GameClient(Level<SyncedLevelObject> level, ListBox<ChatMessage> messages) {
         _level = level;
@@ -57,28 +66,63 @@ public class GameClient {
             peer.Disconnect("Player left");
     }
 
-    public void ProcessMessages() {
-        while(peer.ReadMessage(out NetIncomingMessage msg)) {
-            switch(msg.MessageType) {
-                case NetIncomingMessageType.WarningMessage:
-                    logger.Warn(msg.ReadString());
-                    break;
-                case NetIncomingMessageType.ErrorMessage:
-                    logger.Error(msg.ReadString());
-                    break;
-                case NetIncomingMessageType.StatusChanged:
-                    ProcessStatusChanged((NetConnectionStatus)msg.ReadByte(), msg.ReadString());
-                    break;
-                case NetIncomingMessageType.Data:
-                    StcDataType type = (StcDataType)msg.ReadByte();
-                    ProcessData(type, msg);
-                    break;
-                default:
-                    logger.Error("Unhandled message type: {}", msg.MessageType);
-                    break;
-            }
-            peer.Recycle(msg);
+    public void ProcessMessages(TimeSpan maxTime) {
+        if(_joinedMessage is not null) {
+            AddJoinedObjects(maxTime);
+            return;
         }
+        TimeSpan start = _timer.time;
+        while(peer.ReadMessage(out NetIncomingMessage msg)) {
+            ProcessMessage(msg);
+            if(_timer.time - start > maxTime)
+                break;
+        }
+    }
+
+    private void ProcessMessage(NetIncomingMessage msg) {
+        switch(msg.MessageType) {
+            case NetIncomingMessageType.WarningMessage:
+                logger.Warn(msg.ReadString());
+                break;
+            case NetIncomingMessageType.ErrorMessage:
+                logger.Error(msg.ReadString());
+                break;
+            case NetIncomingMessageType.StatusChanged:
+                ProcessStatusChanged((NetConnectionStatus)msg.ReadByte(), msg.ReadString());
+                break;
+            case NetIncomingMessageType.Data:
+                StcDataType type = (StcDataType)msg.ReadByte();
+                if(type == StcDataType.Joined) {
+                    leftJoinedObjectCount = msg.ReadInt32();
+                    totalJoinedObjectCount = leftJoinedObjectCount;
+                    _joinedMessage = msg;
+                    return;
+                }
+                ProcessData(type, msg);
+                break;
+            default:
+                logger.Error("Unhandled message type: {}", msg.MessageType);
+                break;
+        }
+        peer.Recycle(msg);
+    }
+
+    private void AddJoinedObjects(TimeSpan maxTime) {
+        if(_joinedMessage is null)
+            return;
+        TimeSpan start = _timer.time;
+        while(leftJoinedObjectCount > 0 && (maxTime == TimeSpan.Zero || _timer.time - start < maxTime)) {
+            ProcessObjectAdded(_joinedMessage);
+            leftJoinedObjectCount--;
+            if(maxTime == TimeSpan.Zero)
+                break;
+        }
+        if(leftJoinedObjectCount > 0)
+            return;
+        peer.Recycle(_joinedMessage);
+        _joinedMessage = null;
+        leftJoinedObjectCount = 0;
+        onJoin?.Invoke();
     }
 
     private void ProcessStatusChanged(NetConnectionStatus status, string reason) {
@@ -88,6 +132,7 @@ public class GameClient {
                 logger.Info("Connected");
                 break;
             case NetConnectionStatus.Disconnected:
+                _joinedMessage = null;
                 onDisconnect?.Invoke(reason, reason != "Player left");
                 logger.Info($"Disconnected ({reason})");
                 break;
@@ -96,9 +141,6 @@ public class GameClient {
 
     private void ProcessData(StcDataType type, NetIncomingMessage msg) {
         switch(type) {
-            case StcDataType.Joined:
-                ProcessJoined(msg);
-                break;
             case StcDataType.ObjectAdded:
                 ProcessObjectAdded(msg);
                 break;
@@ -115,12 +157,6 @@ public class GameClient {
                 logger.Error("Unhandled STC data type: {}", type);
                 break;
         }
-    }
-
-    private void ProcessJoined(NetIncomingMessage msg) {
-        int objCount = msg.ReadInt32();
-        for(int i = 0; i < objCount; i++)
-            ProcessObjectAdded(msg);
     }
 
     private void ProcessObjectAdded(NetIncomingMessage msg) {

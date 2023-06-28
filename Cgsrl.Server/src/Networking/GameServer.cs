@@ -51,6 +51,8 @@ public class GameServer {
         };
 
         _peer.Start();
+
+        logger.Info("Server running on port {}", port);
     }
 
     public void Finish() {

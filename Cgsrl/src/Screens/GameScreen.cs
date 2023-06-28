@@ -41,6 +41,10 @@ public class GameScreen : LayoutResource, IScreen {
 
     protected override string layoutName => "game";
     protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
+        { "loading.progress.center", typeof(LayoutResourceProgressBar) },
+        { "loading.text.center", typeof(LayoutResourceText) },
+        { "loading.progress.bottom", typeof(LayoutResourceProgressBar) },
+        { "loading.text.bottom", typeof(LayoutResourceText) },
         { "players", typeof(LayoutResourceListBox<PlayerObject>) },
         { "chat.messages", typeof(LayoutResourceListBox<ChatMessage>) },
         { "chat.input", typeof(LayoutResourceInputField) },
@@ -63,11 +67,18 @@ public class GameScreen : LayoutResource, IScreen {
     }
 
     private bool _connecting;
-    private string? _lastError;
+    private bool _joining;
 
     private readonly IResources _resources;
     private GameClient? _client;
     private Level<SyncedLevelObject>? _level;
+
+    private Text? _loadingTextCenter;
+    private Text? _loadingTextBottom;
+    private ProgressBar? _loadingProgressCenter;
+    private ProgressBar? _loadingProgressBottom;
+    private string _loadingTextCenterFormat = "{0}";
+    private string _loadingTextBottomFormat = "{0}";
 
     private ListBox<PlayerObject>? _players;
     private ListBox<ChatMessage>? _messages;
@@ -92,6 +103,20 @@ public class GameScreen : LayoutResource, IScreen {
 
     public override void Load(string id) {
         base.Load(id);
+
+        _loadingTextCenter = GetElement<Text>("loading.text.center");
+        _loadingTextBottom = GetElement<Text>("loading.text.bottom");
+        _loadingProgressCenter = GetElement<ProgressBar>("loading.progress.center");
+        _loadingProgressBottom = GetElement<ProgressBar>("loading.progress.bottom");
+
+        _loadingTextCenter.enabled = false;
+        _loadingProgressCenter.enabled = false;
+        _loadingTextBottom.enabled = false;
+        _loadingProgressBottom.enabled = false;
+
+        _loadingTextCenterFormat = _loadingTextCenter.text ?? _loadingTextCenterFormat;
+        _loadingTextBottomFormat = _loadingTextBottom.text ?? _loadingTextBottomFormat;
+
         _players = GetElement<ListBox<PlayerObject>>("players");
         _messages = GetElement<ListBox<ChatMessage>>("chat.messages");
 
@@ -121,6 +146,7 @@ public class GameScreen : LayoutResource, IScreen {
 
         _client = new GameClient(_level, _messages);
         _client.onConnect += Connected;
+        _client.onJoin += Joined;
         _client.onDisconnect += Disconnected;
     }
 
@@ -131,12 +157,9 @@ public class GameScreen : LayoutResource, IScreen {
         _level = null;
     }
 
-    public bool TryConnect(string address, string username, string displayName,
-        [NotNullWhen(false)] out string? error) {
-        if(_client is null) {
-            error = "client doesn't exist?????";
-            return false;
-        }
+    public void Connect(string address, string username, string displayName) {
+        if(_client is null)
+            return;
 
         string host = "127.0.0.1";
         int port = 12420;
@@ -147,54 +170,138 @@ public class GameScreen : LayoutResource, IScreen {
                 port = parsedPort;
         }
 
+        if(_loadingTextCenter is not null)
+            _loadingTextCenter.enabled = true;
+        if(_loadingProgressCenter is not null)
+            _loadingProgressCenter.enabled = true;
+
         _client.Connect(host, port, username, displayName);
         _connecting = true;
-        // do minimal processing until we connect or disconnect
-        while(_connecting)
-            _client.ProcessMessages();
-        error = _lastError;
-        return _lastError is null;
     }
 
     private void Connected() {
         _connecting = false;
-        _lastError = null;
+        _joining = true;
+        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
+            _loadingTextBottom is null || _loadingProgressBottom is null)
+            return;
+        _loadingTextCenter.enabled = false;
+        _loadingProgressCenter.enabled = false;
+        _loadingTextBottom.enabled = true;
+        _loadingProgressBottom.enabled = true;
+    }
+
+    private void Joined() {
+        _joining = false;
+        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
+            _loadingTextBottom is null || _loadingProgressBottom is null)
+            return;
+        _loadingTextCenter.enabled = false;
+        _loadingProgressCenter.enabled = false;
+        _loadingTextBottom.enabled = false;
+        _loadingProgressBottom.enabled = false;
     }
 
     private void Disconnected(string reason, bool isError) {
         _level?.Reset();
         _players?.Clear();
         _messages?.Clear();
-        if(_connecting) {
-            _connecting = false;
-            if(isError)
-                _lastError = reason;
-        }
-        else if(isError)
+        _connecting = false;
+        _joining = false;
+        if(isError)
             SwitchToMainMenuWithError(reason);
-        else if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
-            Core.engine.game.SwitchScreen(screen);
+        else
+            SwitchToMainMenu();
     }
 
-    public void Open() { }
-    public void Close() { }
+    public void Open() {
+        if(_loadingProgressCenter is null || _loadingProgressBottom is null)
+            return;
+        _loadingProgressCenter.value = 0f;
+        _loadingProgressBottom.value = 0f;
+    }
+
+    public void Close() {
+        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
+            _loadingTextBottom is null || _loadingProgressBottom is null)
+            return;
+        _loadingTextCenter.enabled = false;
+        _loadingProgressCenter.enabled = false;
+        _loadingTextBottom.enabled = false;
+        _loadingProgressBottom.enabled = false;
+    }
 
     public void Update(TimeSpan time) {
         bool prevBlock = input.block;
-        bool block = _chatInput?.typing ?? false;
+        bool block = (_chatInput?.typing ?? false) || _connecting || _joining;
 
-        input.block = block;
         if(_client is not null && _level is not null) {
-            _client.ProcessMessages();
+            input.block = block;
+            _client.ProcessMessages(renderer.framerate > 0 ? TimeSpan.FromSeconds(1d / renderer.framerate) :
+                TimeSpan.Zero);
             UpdatePlayerList();
             UpdateChatMessageList();
             _level.Update(time);
+            input.block = prevBlock;
         }
-        input.block = prevBlock;
+
+        if(_connecting)
+            UpdateConnectingProgress();
+        else if(_joining)
+            UpdateJoiningProgress();
 
         foreach((string _, Element element) in elements)
             element.Update(time);
 
+        UpdateInput(block);
+    }
+
+    private void UpdateConnectingProgress() {
+        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
+            _loadingTextBottom is null || _loadingProgressBottom is null ||
+            _client is null)
+            return;
+        string text = _client.peer.ConnectionStatus switch {
+            NetConnectionStatus.None or NetConnectionStatus.Disconnected => "Connecting...",
+            NetConnectionStatus.InitiatedConnect => "Waiting for response...",
+            NetConnectionStatus.ReceivedInitiation => "huh ????",
+            NetConnectionStatus.RespondedAwaitingApproval => "Waiting for approval...",
+            NetConnectionStatus.RespondedConnect => "huh 2 ???",
+            NetConnectionStatus.Connected => "Connected",
+            NetConnectionStatus.Disconnecting => "Disconnecting...",
+            _ => "Unknow..."
+        };
+        float progress = _client.peer.ConnectionStatus switch {
+            NetConnectionStatus.None or NetConnectionStatus.Disconnected => 0f / 3f,
+            NetConnectionStatus.InitiatedConnect => 1f / 3f,
+            NetConnectionStatus.RespondedAwaitingApproval => 2f / 3f,
+            NetConnectionStatus.Connected => 3f / 3f,
+            _ => 0f
+        };
+        _loadingTextCenter.text = string.Format(_loadingTextCenterFormat, text);
+        _loadingTextBottom.text = string.Format(_loadingTextBottomFormat, text);
+        _loadingProgressCenter.value = progress;
+        _loadingProgressBottom.value = progress;
+    }
+
+    private void UpdateJoiningProgress() {
+        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
+            _loadingTextBottom is null || _loadingProgressBottom is null ||
+            _client is null)
+            return;
+        int received = _client.totalJoinedObjectCount - _client.leftJoinedObjectCount;
+        int total = _client.totalJoinedObjectCount;
+        string text = $"Receiving objects... ({received}/{total})";
+        _loadingTextCenter.text = string.Format(_loadingTextCenterFormat, text);
+        _loadingTextBottom.text = string.Format(_loadingTextBottomFormat, text);
+        float progress = Math.Clamp(received / (float)total, 0f, 1f);
+        if(!float.IsNormal(progress))
+            progress = 0f;
+        _loadingProgressCenter.value = progress;
+        _loadingProgressBottom.value = progress;
+    }
+
+    private void UpdateInput(bool block) {
         if(block) {
             _prevEscapePressed = input.KeyPressed(KeyCode.Escape);
             _prevLeftPressed = input.MouseButtonPressed(MouseButton.Left);
@@ -203,9 +310,16 @@ public class GameScreen : LayoutResource, IScreen {
         }
 
         bool escapePressed = input.KeyPressed(KeyCode.Escape);
-        if(!_prevEscapePressed && escapePressed)
-            _client?.Disconnect();
+        if(!_prevEscapePressed && escapePressed) {
+            if(_client is null)
+                SwitchToMainMenu();
+            else
+                _client.Disconnect();
+        }
         _prevEscapePressed = escapePressed;
+
+        if(_connecting || _joining)
+            return;
 
         if(_chatInput?.currentState == ClickableElement.State.Clicked) {
             _prevLeftPressed = input.MouseButtonPressed(MouseButton.Left);
@@ -321,6 +435,11 @@ public class GameScreen : LayoutResource, IScreen {
                 screen.ShowConnectionError(error);
                 return true;
             });
+    }
+
+    private static void SwitchToMainMenu() {
+        if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
+            Core.engine.game.SwitchScreen(screen);
     }
 
     public void Tick(TimeSpan time) { }
