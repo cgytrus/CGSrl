@@ -11,6 +11,7 @@ using NBrigadier.Context;
 using NBrigadier.Tree;
 
 using PER.Abstractions.Environment;
+using PER.Util;
 
 namespace Cgsrl.Server.Networking;
 
@@ -102,6 +103,22 @@ public class Commands {
                             StringArgumentType.GetString(context, "message"));
                         return 1;
                     })))), "Sends a message in the chat.");
+
+        _descriptions.Add(dispatcher.Register(LiteralArgumentBuilder<PlayerObject?>.Literal("teleport")
+            .Then(RequiredArgumentBuilder<PlayerObject?, string>.Argument("username", StringArgumentType.String())
+                .Executes(context => {
+                    TeleportCommand(context, StringArgumentType.GetString(context, "username"));
+                    return 1;
+                }))
+            .Then(RequiredArgumentBuilder<PlayerObject?, int>.Argument("x", IntegerArgumentType.Integer())
+                .Then(RequiredArgumentBuilder<PlayerObject?, int>.Argument("y", IntegerArgumentType.Integer())
+                    .Executes(context => {
+                        TeleportCommand(context,
+                            new Vector2Int(IntegerArgumentType.GetInteger(context, "x"),
+                                IntegerArgumentType.GetInteger(context, "y")));
+                        return 1;
+                    })))
+        ), "Teleports you to the specified position.");
     }
 
     private bool CheckServerPlayer(CommandContext<PlayerObject?> context) {
@@ -169,5 +186,35 @@ public class Commands {
         }
 
         _server.SendChatMessage(context.Source, player, message);
+    }
+
+    private void TeleportCommand(CommandContext<PlayerObject?> context, string username) {
+        if(context.Source is null) {
+            _server.SendChatMessage(null, null, "Teleport can only be executed on the client");
+            return;
+        }
+
+        PlayerObject? player = _level.objects.Values.OfType<PlayerObject>()
+            .FirstOrDefault(ply => ply.username == username);
+        if(player is null) {
+            _server.SendChatMessage(null, context.Source,
+                $"Invalid argument \fb0\f\0 (player \fb{username}\f\0 not found)");
+            return;
+        }
+
+        context.Source.position = player.position;
+        _server.SendChatMessage(null, context.Source,
+            $"Teleported \fb{context.Source.displayName}\f\0 to \fb{player.displayName}");
+    }
+
+    private void TeleportCommand(CommandContext<PlayerObject?> context, Vector2Int position) {
+        if(context.Source is null) {
+            _server.SendChatMessage(null, null, "Teleport can only be executed on the client");
+            return;
+        }
+
+        context.Source.position = position;
+        _server.SendChatMessage(null, context.Source,
+            $"Teleported \fb{context.Source.displayName}\f\0 to \fb{position.x}, {position.y}");
     }
 }
