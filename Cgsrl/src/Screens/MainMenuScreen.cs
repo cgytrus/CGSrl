@@ -61,7 +61,9 @@ public class MainMenuScreen : LayoutResource, IScreen {
         GetElement<Button>("play").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(GameScreen.GlobalId, out GameScreen? screen))
                 Core.engine.game.SwitchScreen(screen, () => {
-                    screen.Connect(playAddress.value ?? "", playUsername.value ?? "", playDisplayName.value ?? "");
+                    screen.Connect(playAddress.value ?? "", playUsername.value ?? "",
+                        string.IsNullOrWhiteSpace(playDisplayName.value) ? playUsername.value ?? "" :
+                            playDisplayName.value ?? "");
                     return true;
                 });
         };
