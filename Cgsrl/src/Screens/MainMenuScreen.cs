@@ -67,8 +67,11 @@ public class MainMenuScreen : LayoutResource, IScreen {
         };
 
         playAddress.onSubmit += (_, _) => _settings.address = playAddress.value ?? "";
+        playAddress.onCancel += (_, _) => _settings.address = playAddress.value ?? "";
         playUsername.onSubmit += (_, _) => _settings.username = playUsername.value ?? "";
+        playUsername.onCancel += (_, _) => _settings.username = playUsername.value ?? "";
         playDisplayName.onSubmit += (_, _) => _settings.displayName = playDisplayName.value ?? "";
+        playDisplayName.onCancel += (_, _) => _settings.displayName = playDisplayName.value ?? "";
 
         GetElement<Button>("settings").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(SettingsScreen.GlobalId, out SettingsScreen? screen))
