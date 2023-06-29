@@ -25,55 +25,6 @@ public class SettingsScreen : LayoutResource, IScreen {
     protected override IAudio audio => Core.engine.audio;
 
     protected override string layoutName => "settings";
-    protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
-        { "frameLeft", typeof(LayoutResourceText) },
-        { "frameRight", typeof(LayoutResourceText) },
-        { "header.audio", typeof(LayoutResourceText) },
-        { "volume.master.value", typeof(LayoutResourceText) },
-        { "volume.master", typeof(LayoutResourceSlider) },
-        { "volume.master.label", typeof(LayoutResourceText) },
-        { "volume.unfocusedMaster.value", typeof(LayoutResourceText) },
-        { "volume.unfocusedMaster", typeof(LayoutResourceSlider) },
-        { "volume.unfocusedMaster.label", typeof(LayoutResourceText) },
-        { "volume.music.value", typeof(LayoutResourceText) },
-        { "volume.music", typeof(LayoutResourceSlider) },
-        { "volume.music.label", typeof(LayoutResourceText) },
-        { "volume.sfx.value", typeof(LayoutResourceText) },
-        { "volume.sfx", typeof(LayoutResourceSlider) },
-        { "volume.sfx.label", typeof(LayoutResourceText) },
-        { "header.video", typeof(LayoutResourceText) },
-        { "bloom", typeof(LayoutResourceButton) },
-        { "fullscreen", typeof(LayoutResourceButton) },
-        { "fpsLimit.value", typeof(LayoutResourceText) },
-        { "fpsLimit", typeof(LayoutResourceSlider) },
-        { "fpsLimit.label", typeof(LayoutResourceText) },
-        { "header.advanced", typeof(LayoutResourceText) },
-        { "showFps", typeof(LayoutResourceButton) },
-        { "header.packs", typeof(LayoutResourceText) },
-        { "pack.description", typeof(LayoutResourceText) },
-        { "packs", typeof(LayoutResourceListBox<ResourcePackData>) },
-        { "back", typeof(LayoutResourceButton) },
-        { "apply", typeof(LayoutResourceButton) },
-        { "reload", typeof(LayoutResourceButton) }
-    };
-
-    protected override IEnumerable<KeyValuePair<string, Type>> dependencyTypes {
-        get {
-            foreach(KeyValuePair<string, Type> pair in base.dependencyTypes)
-                yield return pair;
-            yield return new KeyValuePair<string, Type>(ResourcePackSelectorTemplate.GlobalId,
-                typeof(ResourcePackSelectorTemplate));
-        }
-    }
-
-    protected override IEnumerable<KeyValuePair<string, string>> paths {
-        get {
-            foreach(KeyValuePair<string, string> pair in base.paths)
-                yield return pair;
-            yield return new KeyValuePair<string, string>("frameLeft.text", $"{layoutsPath}/{layoutName}Left.txt");
-            yield return new KeyValuePair<string, string>("frameRight.text", $"{layoutsPath}/{layoutName}Right.txt");
-        }
-    }
 
     private bool reload {
         get => _reload;
@@ -96,6 +47,44 @@ public class SettingsScreen : LayoutResource, IScreen {
         _settings = settings;
         resources.TryAddResource(ResourcePackSelectorTemplate.GlobalId,
             new ResourcePackSelectorTemplate(this, _availablePacks, _loadedPacks));
+    }
+
+    public override void Preload() {
+        base.Preload();
+        AddDependency<ResourcePackSelectorTemplate>(ResourcePackSelectorTemplate.GlobalId);
+
+        AddPath("frameLeft.text", $"{layoutsPath}/{layoutName}Left.txt");
+        AddPath("frameRight.text", $"{layoutsPath}/{layoutName}Right.txt");
+
+        AddElement<Text>("frameLeft");
+        AddElement<Text>("frameRight");
+        AddElement<Text>("header.audio");
+        AddElement<Text>("volume.master.value");
+        AddElement<Slider>("volume.master");
+        AddElement<Text>("volume.master.label");
+        AddElement<Text>("volume.unfocusedMaster.value");
+        AddElement<Slider>("volume.unfocusedMaster");
+        AddElement<Text>("volume.unfocusedMaster.label");
+        AddElement<Text>("volume.music.value");
+        AddElement<Slider>("volume.music");
+        AddElement<Text>("volume.music.label");
+        AddElement<Text>("volume.sfx.value");
+        AddElement<Slider>("volume.sfx");
+        AddElement<Text>("volume.sfx.label");
+        AddElement<Text>("header.video");
+        AddElement<Button>("bloom");
+        AddElement<Button>("fullscreen");
+        AddElement<Text>("fpsLimit.value");
+        AddElement<Slider>("fpsLimit");
+        AddElement<Text>("fpsLimit.label");
+        AddElement<Text>("header.advanced");
+        AddElement<Button>("showFps");
+        AddElement<Text>("header.packs");
+        AddElement<Text>("pack.description");
+        AddElement<ListBox<ResourcePackData>>("packs");
+        AddElement<Button>("back");
+        AddElement<Button>("apply");
+        AddElement<Button>("reload");
     }
 
     public override void Load(string id) {

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 using PER.Abstractions;
 using PER.Abstractions.Audio;
@@ -21,36 +20,32 @@ public class MainMenuScreen : LayoutResource, IScreen {
     protected override IAudio audio => Core.engine.audio;
 
     protected override string layoutName => "mainMenu";
-    protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
-        { "frameLeft", typeof(LayoutResourceText) },
-        { "frameRight", typeof(LayoutResourceText) },
-        { "title", typeof(LayoutResourceText) },
-        { "play", typeof(LayoutResourceButton) },
-        { "play.address", typeof(LayoutResourceInputField) },
-        { "play.username", typeof(LayoutResourceInputField) },
-        { "play.displayName", typeof(LayoutResourceInputField) },
-        { "settings", typeof(LayoutResourceButton) },
-        { "exit", typeof(LayoutResourceButton) },
-        { "sfml", typeof(LayoutResourceButton) },
-        { "github", typeof(LayoutResourceButton) },
-        { "discord", typeof(LayoutResourceButton) },
-        { "versions", typeof(LayoutResourceText) }
-    };
-
-    protected override IEnumerable<KeyValuePair<string, string>> paths {
-        get {
-            foreach(KeyValuePair<string, string> pair in base.paths)
-                yield return pair;
-            yield return new KeyValuePair<string, string>("frameLeft.text", $"{layoutsPath}/{layoutName}Left.txt");
-            yield return new KeyValuePair<string, string>("frameRight.text", $"{layoutsPath}/{layoutName}Right.txt");
-        }
-    }
 
     private readonly Settings _settings;
 
     private ConnectionErrorDialogBoxScreen? _connectionErrorDialogBox;
 
     public MainMenuScreen(Settings settings) => _settings = settings;
+
+    public override void Preload() {
+        base.Preload();
+        AddPath("frameLeft.text", $"{layoutsPath}/{layoutName}Left.txt");
+        AddPath("frameRight.text", $"{layoutsPath}/{layoutName}Right.txt");
+
+        AddElement<Text>("frameLeft");
+        AddElement<Text>("frameRight");
+        AddElement<Text>("title");
+        AddElement<Button>("play");
+        AddElement<InputField>("play.address");
+        AddElement<InputField>("play.username");
+        AddElement<InputField>("play.displayName");
+        AddElement<Button>("settings");
+        AddElement<Button>("exit");
+        AddElement<Button>("sfml");
+        AddElement<Button>("github");
+        AddElement<Button>("discord");
+        AddElement<Text>("versions");
+    }
 
     public override void Load(string id) {
         base.Load(id);

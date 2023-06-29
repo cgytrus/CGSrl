@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 using PER.Abstractions.Audio;
 using PER.Abstractions.Input;
@@ -23,17 +22,19 @@ public class ConnectionErrorDialogBoxScreen : DialogBoxScreenResource {
     protected override IAudio audio => Core.engine.audio;
 
     protected override string layoutName => "connectionErrorDialog";
-    protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
-        { "title", typeof(LayoutResourceText) },
-        { "text", typeof(LayoutResourceText) },
-        { "ok", typeof(LayoutResourceButton) }
-    };
 
     public string text { get; set; } = "";
 
     private string _formatStr = "{0}";
 
     public ConnectionErrorDialogBoxScreen() : base(new Vector2Int(72, 18)) { }
+
+    public override void Preload() {
+        base.Preload();
+        AddElement<Text>("title");
+        AddElement<Text>("text");
+        AddElement<Button>("ok");
+    }
 
     public override void Load(string id) {
         base.Load(id);

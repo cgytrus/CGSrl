@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 
 using Cgsrl.Networking;
 
@@ -23,9 +21,11 @@ public class ChatMessageListTemplate : ListBoxTemplateResource<ChatMessage> {
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
     protected override string layoutName => "chatItem";
-    protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
-        { "text", typeof(LayoutResourceText) }
-    };
+
+    public override void Preload() {
+        base.Preload();
+        AddElement<Text>("text");
+    }
 
     private class Template : BasicTemplate {
         private readonly string _formatStr;

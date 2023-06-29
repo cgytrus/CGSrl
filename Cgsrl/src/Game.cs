@@ -4,7 +4,6 @@ using Cgsrl.Resources;
 using Cgsrl.Screens;
 
 using PER.Abstractions;
-using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
 using PER.Common;

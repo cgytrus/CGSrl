@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 using Cgsrl.Networking;
 using Cgsrl.Screens.Templates;
@@ -39,33 +38,6 @@ public class GameScreen : LayoutResource, IScreen {
     protected override IAudio audio => Core.engine.audio;
 
     protected override string layoutName => "game";
-    protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
-        { "loading.progress.center", typeof(LayoutResourceProgressBar) },
-        { "loading.text.center", typeof(LayoutResourceText) },
-        { "loading.progress.bottom", typeof(LayoutResourceProgressBar) },
-        { "loading.text.bottom", typeof(LayoutResourceText) },
-        { "players", typeof(LayoutResourceListBox<PlayerObject>) },
-        { "chat.messages", typeof(LayoutResourceListBox<ChatMessage>) },
-        { "chat.input", typeof(LayoutResourceInputField) },
-        { "info", typeof(LayoutResourceText) },
-        { "spawner.objects.floor", typeof(LayoutResourceButton) },
-        { "spawner.objects.wall", typeof(LayoutResourceButton) },
-        { "spawner.objects.box", typeof(LayoutResourceButton) },
-        { "spawner.objects.effect", typeof(LayoutResourceButton) },
-        { "spawner.objects.ice", typeof(LayoutResourceButton) },
-        { "spawner.width", typeof(LayoutResourceInputField) },
-        { "spawner.height", typeof(LayoutResourceInputField) },
-        { "spawner.effect", typeof(LayoutResourceInputField) }
-    };
-
-    protected override IEnumerable<KeyValuePair<string, Type>> dependencyTypes {
-        get {
-            foreach(KeyValuePair<string, Type> pair in base.dependencyTypes)
-                yield return pair;
-            yield return new KeyValuePair<string, Type>(PlayerListTemplate.GlobalId, typeof(PlayerListTemplate));
-            yield return new KeyValuePair<string, Type>(ChatMessageListTemplate.GlobalId, typeof(ChatMessageListTemplate));
-        }
-    }
 
     private bool _connecting;
     private bool _joining;
@@ -104,6 +76,29 @@ public class GameScreen : LayoutResource, IScreen {
         resources.TryAddResource(PlayerListTemplate.GlobalId, new PlayerListTemplate());
         resources.TryAddResource(ChatMessageListTemplate.GlobalId, new ChatMessageListTemplate());
         _spawnerCurrent = _spawnerWall;
+    }
+
+    public override void Preload() {
+        base.Preload();
+        AddDependency<PlayerListTemplate>(PlayerListTemplate.GlobalId);
+        AddDependency<ChatMessageListTemplate>(ChatMessageListTemplate.GlobalId);
+
+        AddElement<ProgressBar>("loading.progress.center");
+        AddElement<Text>("loading.text.center");
+        AddElement<ProgressBar>("loading.progress.bottom");
+        AddElement<Text>("loading.text.bottom");
+        AddElement<ListBox<PlayerObject>>("players");
+        AddElement<ListBox<ChatMessage>>("chat.messages");
+        AddElement<InputField>("chat.input");
+        AddElement<Text>("info");
+        AddElement<Button>("spawner.objects.floor");
+        AddElement<Button>("spawner.objects.wall");
+        AddElement<Button>("spawner.objects.box");
+        AddElement<Button>("spawner.objects.effect");
+        AddElement<Button>("spawner.objects.ice");
+        AddElement<InputField>("spawner.width");
+        AddElement<InputField>("spawner.height");
+        AddElement<InputField>("spawner.effect");
     }
 
     public override void Load(string id) {

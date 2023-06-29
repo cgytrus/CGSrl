@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 using PER.Abstractions.Audio;
 using PER.Abstractions.Input;
@@ -20,11 +19,6 @@ public class ResourcePackSelectorTemplate : ListBoxTemplateResource<ResourcePack
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
     protected override string layoutName => "resourcePackItem";
-    protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
-        { "toggle", typeof(LayoutResourceButton) },
-        { "up", typeof(LayoutResourceButton) },
-        { "down", typeof(LayoutResourceButton) }
-    };
 
     private readonly SettingsScreen _screen;
     private readonly IList<ResourcePackData> _availablePacks;
@@ -35,6 +29,13 @@ public class ResourcePackSelectorTemplate : ListBoxTemplateResource<ResourcePack
         _screen = screen;
         _availablePacks = availablePacks;
         _loadedPacks = loadedPacks;
+    }
+
+    public override void Preload() {
+        base.Preload();
+        AddElement<Button>("toggle");
+        AddElement<Button>("up");
+        AddElement<Button>("down");
     }
 
     private class Template : BasicTemplate {

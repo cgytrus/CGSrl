@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 
 using Cgsrl.Shared.Environment;
@@ -20,9 +19,11 @@ public class PlayerListTemplate : ListBoxTemplateResource<PlayerObject> {
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
     protected override string layoutName => "playerItem";
-    protected override IReadOnlyDictionary<string, Type> elementTypes { get; } = new Dictionary<string, Type> {
-        { "name", typeof(LayoutResourceText) }
-    };
+
+    public override void Preload() {
+        base.Preload();
+        AddElement<Text>("name");
+    }
 
     private class Template : BasicTemplate {
         private readonly string _formatStr;
