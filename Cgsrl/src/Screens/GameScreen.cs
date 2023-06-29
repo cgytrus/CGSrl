@@ -489,8 +489,10 @@ public class GameScreen : LayoutResource, IScreen {
                 input.mousePosition.InBounds(message.element.bounds);
         if(message.element.effect is not FadeEffect { fading: false } fade)
             return;
-        if(NetTime.Now - message.time >= MessageStayTime)
-            fade.Start(MessageFadeOutTime, float.PositiveInfinity, () => _messages.Remove(message));
+        if(NetTime.Now - message.time >= MessageStayTime) {
+            ChatMessage msg = message;
+            fade.Start(MessageFadeOutTime, float.PositiveInfinity, () => _messages.Remove(msg));
+        }
         else if(message.isNew)
             fade.Start(0f, MessageFadeInTime, message.fadeOutCallback);
     }
