@@ -7,7 +7,7 @@ using PER.Abstractions.Environment;
 namespace Cgsrl.Shared.Networking;
 
 public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> {
-    private enum ObjectType { Player, Floor, Wall, Box, Effect, Ice, Message }
+    private enum ObjectType { Player, Floor, Wall, Box, Effect, Ice, Message, Grass }
 
     //                              id   layer         position          extra
     public const int PreallocSize = 16 + sizeof(int) + sizeof(int) * 2 + 8;
@@ -21,6 +21,7 @@ public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> 
             EffectObject => (int)ObjectType.Effect,
             IceObject => (int)ObjectType.Ice,
             MessageObject => (int)ObjectType.Message,
+            GrassObject => (int)ObjectType.Grass,
             _ => int.MaxValue
         });
         WriteDataTo(buffer);
@@ -47,6 +48,7 @@ public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> 
                 (int)ObjectType.Effect => new EffectObject(),
                 (int)ObjectType.Ice => new IceObject(),
                 (int)ObjectType.Message => new MessageObject(),
+                (int)ObjectType.Grass => new GrassObject(),
                 _ => new CorruptedObject()
             };
             obj.id = buffer.ReadGuid();

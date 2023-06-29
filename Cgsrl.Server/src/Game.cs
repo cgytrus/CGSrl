@@ -57,6 +57,7 @@ public class Game : IGame {
             for(int x = -20; x <= 20; x++) {
                 _level.Add(new FloorObject { layer = -1, position = new Vector2Int(x, y) });
                 _level.Add(new IceObject { layer = -1, position = new Vector2Int(x, y + 41) });
+                _level.Add(new GrassObject { layer = -1, position = new Vector2Int(x, y + 41 + 41) });
             }
         }
 
