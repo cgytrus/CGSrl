@@ -1,4 +1,6 @@
-﻿using Cgsrl.Shared.Networking;
+﻿using System.Numerics;
+
+using Cgsrl.Shared.Networking;
 
 using Lidgren.Network;
 
@@ -39,6 +41,10 @@ public class PlayerObject : SyncedLevelObject {
     private string _displayName = "";
     private float _ping;
 
+    private const float MaxInteractionDistance = 3f;
+    private bool _prevLeftPressed;
+    private InteractableObject? _currentInteractable;
+
     private Vector2Int _prevMove;
     public Vector2Int move { get; set; }
 
@@ -52,6 +58,30 @@ public class PlayerObject : SyncedLevelObject {
     private Vector2Int _prevPosition;
 
     public override void Update(TimeSpan time) {
+        if(connection is null)
+            return;
+        UpdateInteraction();
+        UpdateMovement();
+    }
+
+    private void UpdateInteraction() {
+        Vector2Int mouse = level.ScreenToLevelPosition(input.mousePosition);
+        Vector2Int relativeMouse = mouse - position;
+        float mouseDistSqr = new Vector2(relativeMouse.x, relativeMouse.y).LengthSquared();
+        if(mouseDistSqr > MaxInteractionDistance * MaxInteractionDistance ||
+            !level.TryGetObjectAt(mouse, out InteractableObject? obj)) {
+            _currentInteractable = null;
+            return;
+        }
+        _currentInteractable = obj;
+
+        bool leftPressed = input.MouseButtonPressed(MouseButton.Left);
+        if(!_prevLeftPressed && leftPressed)
+            obj.Interact(this);
+        _prevLeftPressed = leftPressed;
+    }
+
+    private void UpdateMovement() {
         if(connection is null)
             return;
         int moveX = 0;
@@ -82,6 +112,14 @@ public class PlayerObject : SyncedLevelObject {
         if(Math.Abs(cameraPosition.y) > 5)
             level.cameraPosition += new Vector2Int(0, delta.y);
         _prevPosition = position;
+    }
+
+    public override void Draw() {
+        base.Draw();
+        if(_currentInteractable is null)
+            return;
+        renderer.DrawText(level.LevelToScreenPosition(_currentInteractable.position + new Vector2Int(1, -1)),
+            _currentInteractable.prompt, _ => new Formatting(Color.white, Color.black, RenderStyle.Italic));
     }
 
     // shtu up

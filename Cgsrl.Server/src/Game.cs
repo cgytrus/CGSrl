@@ -63,6 +63,7 @@ public class Game : IGame {
         _level.Add(new BoxObject { layer = 1, position = new Vector2Int(2, 0) });
         _level.Add(new BoxObject { layer = 1, position = new Vector2Int(2, 1) });
         _level.Add(new BoxObject { layer = 1, position = new Vector2Int(2, 3) });
+        _level.Add(new MessageObject { layer = 1, position = new Vector2Int(1, 5) });
 
         for(int i = -5; i <= 5; i++)
             _level.Add(new WallObject { layer = 1, position = new Vector2Int(i, -5) });

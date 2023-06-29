@@ -66,6 +66,7 @@ public class GameScreen : LayoutResource, IScreen {
     private readonly BoxObject _spawnerBox = new() { layer = 1 };
     private readonly EffectObject _spawnerEffect = new() { layer = 2 };
     private readonly IceObject _spawnerIce = new() { layer = -1 };
+    private readonly MessageObject _spawnerMessage = new() { layer = 1 };
 
     private bool _prevEscapePressed;
     private bool _prevLeftPressed;
@@ -96,6 +97,7 @@ public class GameScreen : LayoutResource, IScreen {
         AddElement<Button>("spawner.objects.box");
         AddElement<Button>("spawner.objects.effect");
         AddElement<Button>("spawner.objects.ice");
+        AddElement<Button>("spawner.objects.message");
         AddElement<InputField>("spawner.width");
         AddElement<InputField>("spawner.height");
         AddElement<InputField>("spawner.effect");
@@ -137,6 +139,7 @@ public class GameScreen : LayoutResource, IScreen {
         GetElement<Button>("spawner.objects.box").onClick += (_, _) => _spawnerCurrent = _spawnerBox;
         GetElement<Button>("spawner.objects.effect").onClick += (_, _) => _spawnerCurrent = _spawnerEffect;
         GetElement<Button>("spawner.objects.ice").onClick += (_, _) => _spawnerCurrent = _spawnerIce;
+        GetElement<Button>("spawner.objects.message").onClick += (_, _) => _spawnerCurrent = _spawnerMessage;
 
         _level = new Level<SyncedLevelObject>(renderer, input, audio, _resources);
         _level.objectAdded += obj => {
