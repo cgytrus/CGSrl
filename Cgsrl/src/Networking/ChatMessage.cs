@@ -1,4 +1,6 @@
-﻿using Cgsrl.Shared.Environment;
+﻿using System;
+
+using Cgsrl.Shared.Environment;
 
 using PRR.UI;
 
@@ -9,6 +11,7 @@ public class ChatMessage {
         this.player = player;
         this.time = time;
         this.text = text;
+        fadeOutCallback = () => isNew = false;
     }
 
     public Text? element { get; set; }
@@ -16,4 +19,5 @@ public class ChatMessage {
     public PlayerObject? player { get; }
     public double time { get; }
     public string text { get; }
+    public Action fadeOutCallback { get; }
 }

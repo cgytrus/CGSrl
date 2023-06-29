@@ -481,7 +481,7 @@ public class GameScreen : LayoutResource, IScreen {
         if(NetTime.Now - message.time >= MessageStayTime)
             fade.Start(MessageFadeOutTime, float.PositiveInfinity, () => _messages.Remove(message));
         else if(message.isNew)
-            fade.Start(0f, MessageFadeInTime, () => message.isNew = false);
+            fade.Start(0f, MessageFadeInTime, message.fadeOutCallback);
     }
 
     private void SendChatMessage() {
