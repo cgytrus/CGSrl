@@ -8,7 +8,7 @@ using PER.Util;
 namespace Cgsrl.Shared.Environment;
 
 public class MessageObject : InteractableObject {
-    public override string prompt => "send...";
+    public override string prompt => "send";
 
     protected override RenderCharacter character { get; } = new('!', Color.transparent, Color.white);
     public override void Update(TimeSpan time) { }

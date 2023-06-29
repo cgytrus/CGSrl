@@ -60,6 +60,9 @@ public class GameScreen : LayoutResource, IScreen {
     private InputField? _chatInput;
     private readonly List<string> _messageHistory = new();
 
+    private Text? _interactableText;
+    private string _interactableFormat = "{0}";
+
     private Text? _infoText;
     private string _infoFormat = "{0} {1} {2}";
 
@@ -99,6 +102,7 @@ public class GameScreen : LayoutResource, IScreen {
         AddElement<ListBox<PlayerObject>>("players");
         AddElement<ListBox<ChatMessage>>("chat.messages");
         AddElement<InputField>("chat.input");
+        AddElement<Text>("interactablePrompt");
         AddElement<Text>("info");
         AddElement<Button>("spawner.objects.floor");
         AddElement<Button>("spawner.objects.wall");
@@ -139,6 +143,9 @@ public class GameScreen : LayoutResource, IScreen {
         _chatInput.onCancel += (_, _) => {
             _chatInput.value = null;
         };
+
+        _interactableText = GetElement<Text>("interactablePrompt");
+        _interactableFormat = _interactableText.text ?? _interactableFormat;
 
         _infoText = GetElement<Text>("info");
         _infoFormat = _infoText.text ?? _infoFormat;
@@ -258,11 +265,8 @@ public class GameScreen : LayoutResource, IScreen {
                 TimeSpan.FromSeconds(1f / 60f));
             UpdatePlayerList();
             UpdateChatMessageList();
-            if(_infoText is not null)
-                _infoText.text = string.Format(_infoFormat,
-                    input.mousePosition,
-                    _level.ScreenToCameraPosition(input.mousePosition),
-                    _level.ScreenToLevelPosition(input.mousePosition));
+            UpdateInteractablePrompt();
+            UpdateInfoText();
             _level.Update(time);
             input.block = prevBlock;
         }
@@ -502,6 +506,29 @@ public class GameScreen : LayoutResource, IScreen {
         _messageHistory.Remove(_chatInput.value);
         _messageHistory.Add(_chatInput.value);
         RemoveOldHistory();
+    }
+
+    private void UpdateInteractablePrompt() {
+        if(_interactableText is null || _level is null)
+            return;
+        if(PlayerObject.currentInteractable is null) {
+            _interactableText.text = string.Empty;
+            _interactableText.position = new Vector2Int(-1, -1);
+        }
+        else {
+            _interactableText.text = string.Format(_interactableFormat, PlayerObject.currentInteractable.prompt);
+            _interactableText.position =
+                _level.LevelToScreenPosition(PlayerObject.currentInteractable.position + new Vector2Int(1, -1));
+        }
+    }
+
+    private void UpdateInfoText() {
+        if(_infoText is null || _level is null)
+            return;
+        _infoText.text = string.Format(_infoFormat,
+            input.mousePosition,
+            _level.ScreenToCameraPosition(input.mousePosition),
+            _level.ScreenToLevelPosition(input.mousePosition));
     }
 
     private static void SwitchToMainMenuWithError(string error) {

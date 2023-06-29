@@ -43,7 +43,7 @@ public class PlayerObject : SyncedLevelObject {
 
     private const float MaxInteractionDistance = 3f;
     private bool _prevLeftPressed;
-    private InteractableObject? _currentInteractable;
+    public static InteractableObject? currentInteractable { get; set; }
 
     private Vector2Int _prevMove;
     public Vector2Int move { get; set; }
@@ -70,10 +70,10 @@ public class PlayerObject : SyncedLevelObject {
         float mouseDistSqr = new Vector2(relativeMouse.x, relativeMouse.y).LengthSquared();
         if(mouseDistSqr > MaxInteractionDistance * MaxInteractionDistance ||
             !level.TryGetObjectAt(mouse, out InteractableObject? obj)) {
-            _currentInteractable = null;
+            currentInteractable = null;
             return;
         }
-        _currentInteractable = obj;
+        currentInteractable = obj;
 
         bool leftPressed = input.MouseButtonPressed(MouseButton.Left);
         if(!_prevLeftPressed && leftPressed)
@@ -112,14 +112,6 @@ public class PlayerObject : SyncedLevelObject {
         if(Math.Abs(cameraPosition.y) > 5)
             level.cameraPosition += new Vector2Int(0, delta.y);
         _prevPosition = position;
-    }
-
-    public override void Draw() {
-        base.Draw();
-        if(_currentInteractable is null)
-            return;
-        renderer.DrawText(level.LevelToScreenPosition(_currentInteractable.position + new Vector2Int(1, -1)),
-            _currentInteractable.prompt, _ => new Formatting(Color.white, Color.black, RenderStyle.Italic));
     }
 
     // shtu up

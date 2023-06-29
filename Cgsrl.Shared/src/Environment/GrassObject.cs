@@ -8,7 +8,7 @@ using PER.Util;
 namespace Cgsrl.Shared.Environment;
 
 public class GrassObject : InteractableObject {
-    public override string prompt => "touch...";
+    public override string prompt => "touch";
 
     protected override RenderCharacter character { get; } = new('"', Color.transparent, new Color(0f, 0.4f, 0f, 1f));
     public override void Update(TimeSpan time) { }

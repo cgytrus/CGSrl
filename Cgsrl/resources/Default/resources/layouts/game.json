@@ -32,6 +32,16 @@
         "size": { "x": 36, "y": 1 },
         "placeholder": "message... [T]"
     },
+    "interactablePrompt": {
+        "position": { "x": -1, "y": -1 },
+        "text": "\f0{0}...",
+        "align": "left",
+        "formatting": {
+            "0": {
+                "style": "italic"
+            }
+        }
+    },
     "info": {
         "position": { "x": 100, "y": 0 },
         "text": "cursor pos:  \nscreen: {0}\ncamera: {1}\nlevel: {2}",
