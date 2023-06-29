@@ -110,8 +110,9 @@ public class MainMenuScreen : LayoutResource, IScreen {
         bool prevInputBlock = input.block;
         input.block = _connectionErrorDialogBox is not null;
 
-        foreach((string _, Element element) in elements)
-            element.Update(time);
+        // ReSharper disable once ForCanBeConvertedToForeach
+        for(int i = 0; i < elementList.Count; i++)
+            elementList[i].Update(time);
 
         input.block = prevInputBlock;
 

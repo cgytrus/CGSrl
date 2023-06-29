@@ -232,8 +232,9 @@ public class SettingsScreen : LayoutResource, IScreen {
     public void Close() => reload = false;
 
     public void Update(TimeSpan time) {
-        foreach((string _, Element element) in elements)
-            element.Update(time);
+        // ReSharper disable once ForCanBeConvertedToForeach
+        for(int i = 0; i < elementList.Count; i++)
+            elementList[i].Update(time);
 
         if(!_reloadScheduled)
             return;
