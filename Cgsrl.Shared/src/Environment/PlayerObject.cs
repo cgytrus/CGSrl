@@ -37,13 +37,15 @@ public class PlayerObject : SyncedLevelObject {
         }
     }
 
+    public bool pingDirty { get; set; }
+
     private string _username = "";
     private string _displayName = "";
     private float _ping;
 
     private const float MaxInteractionDistance = 3f;
     private bool _prevLeftPressed;
-    public static InteractableObject? currentInteractable { get; set; }
+    public static InteractableObject? currentInteractable { get; private set; }
 
     private Vector2Int _prevMove;
     public Vector2Int move { get; set; }
@@ -198,5 +200,6 @@ public class PlayerObject : SyncedLevelObject {
         _username = buffer.ReadString();
         _displayName = buffer.ReadString();
         _ping = buffer.ReadFloat();
+        pingDirty = true;
     }
 }

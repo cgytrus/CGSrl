@@ -35,8 +35,7 @@ public class PlayerListTemplate : ListBoxTemplateResource<PlayerObject> {
             Text nameText = GetElement<Text>("name");
             string ping = ((long)TimeSpan.FromSeconds(item.ping).TotalMilliseconds)
                 .ToString(CultureInfo.InvariantCulture);
-            nameText.text = string.Format(_formatStr, item.username, item.displayName,
-                ping.ToString(CultureInfo.InvariantCulture));
+            nameText.text = string.Format(_formatStr, item.username, item.displayName, ping);
             item.text = nameText;
         }
     }

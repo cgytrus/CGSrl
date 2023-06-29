@@ -463,6 +463,10 @@ public class GameScreen : LayoutResource, IScreen {
                 continue;
             }
             player.highlighted = input.mousePosition.InBounds(text.bounds);
+            if(!player.pingDirty)
+                continue;
+            _players.UpdateItem(player);
+            player.pingDirty = false;
         }
     }
 
