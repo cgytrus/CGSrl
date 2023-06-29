@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Cgsrl.Networking;
 using Cgsrl.Screens.Templates;
@@ -30,6 +31,7 @@ public class GameScreen : LayoutResource, IScreen {
     private const float MessageFadeInTime = 0.5f;
     private const double MessageStayTime = 60d;
     private const float MessageFadeOutTime = 5f;
+    private const int MaxMessageHistory = 100;
 
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -56,6 +58,7 @@ public class GameScreen : LayoutResource, IScreen {
     private ListBox<PlayerObject>? _players;
     private ListBox<ChatMessage>? _messages;
     private InputField? _chatInput;
+    private readonly List<string> _messageHistory = new();
 
     private Text? _infoText;
     private string _infoFormat = "{0} {1} {2}";
@@ -69,6 +72,10 @@ public class GameScreen : LayoutResource, IScreen {
     private readonly MessageObject _spawnerMessage = new() { layer = 1 };
 
     private bool _prevEscapePressed;
+    private bool _prevTPressed;
+    private bool _prevUpPressed;
+    private bool _prevDownPressed;
+
     private bool _prevLeftPressed;
     private bool _prevRightPressed;
 
@@ -314,24 +321,23 @@ public class GameScreen : LayoutResource, IScreen {
     }
 
     private void UpdateInput(bool block) {
+        if(_chatInput?.typing ?? false)
+            UpdateChatHistoryInput();
+
         if(block) {
             _prevEscapePressed = input.KeyPressed(KeyCode.Escape);
+            _prevTPressed = input.KeyPressed(KeyCode.T);
             _prevLeftPressed = input.MouseButtonPressed(MouseButton.Left);
             _prevRightPressed = input.MouseButtonPressed(MouseButton.Right);
             return;
         }
 
-        bool escapePressed = input.KeyPressed(KeyCode.Escape);
-        if(!_prevEscapePressed && escapePressed) {
-            if(_client is null)
-                SwitchToMainMenu();
-            else
-                _client.Disconnect();
-        }
-        _prevEscapePressed = escapePressed;
+        UpdateExitHotkey();
 
         if(_connecting || _joining)
             return;
+
+        UpdateChatHotkey();
 
         if(_chatInput?.currentState == ClickableElement.State.Clicked) {
             _prevLeftPressed = input.MouseButtonPressed(MouseButton.Left);
@@ -340,6 +346,53 @@ public class GameScreen : LayoutResource, IScreen {
         }
 
         UpdateSpawner();
+    }
+
+    private void UpdateChatHistoryInput() {
+        if(_chatInput is null)
+            return;
+
+        bool upPressed = input.KeyPressed(KeyCode.Up);
+        bool up = !_prevUpPressed && upPressed;
+        _prevUpPressed = upPressed;
+
+        bool downPressed = input.KeyPressed(KeyCode.Down);
+        bool down = !_prevDownPressed && downPressed;
+        _prevDownPressed = downPressed;
+
+        if(!up && !down)
+            return;
+
+        int index = _messageHistory.IndexOf(_chatInput.value ?? "") + (up ? -1 : 1);
+
+        while(index >= _messageHistory.Count) index -= _messageHistory.Count + 1;
+        while(index < -1) index += _messageHistory.Count + 1;
+
+        _chatInput.value = index >= 0 && index < _messageHistory.Count ? _messageHistory[index] : null;
+        _chatInput.cursor = _chatInput.value?.Length ?? 0;
+    }
+
+    private void RemoveOldHistory() {
+        for(int i = 0; i < _messageHistory.Count - MaxMessageHistory; i++)
+            _messageHistory.RemoveAt(i);
+    }
+
+    private void UpdateExitHotkey() {
+        bool escapePressed = input.KeyPressed(KeyCode.Escape);
+        if(!_prevEscapePressed && escapePressed) {
+            if(_client is null)
+                SwitchToMainMenu();
+            else
+                _client.Disconnect();
+        }
+        _prevEscapePressed = escapePressed;
+    }
+
+    private void UpdateChatHotkey() {
+        bool tPressed = input.KeyPressed(KeyCode.T);
+        if(!_prevTPressed && tPressed && _chatInput is not null)
+            _chatInput.StartTyping();
+        _prevTPressed = tPressed;
     }
 
     private void UpdateSpawner() {
@@ -434,11 +487,18 @@ public class GameScreen : LayoutResource, IScreen {
     private void SendChatMessage() {
         if(_client is null || _chatInput is null || string.IsNullOrEmpty(_chatInput.value))
             return;
+
         NetOutgoingMessage msg = _client.peer.CreateMessage();
         msg.Write((byte)CtsDataType.ChatMessage);
         msg.WriteTime(false);
         msg.Write(_chatInput.value);
         _client.peer.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+
+        // remove the current message so that if it's already in the history
+        // it's moved to the end of the history
+        _messageHistory.Remove(_chatInput.value);
+        _messageHistory.Add(_chatInput.value);
+        RemoveOldHistory();
     }
 
     private static void SwitchToMainMenuWithError(string error) {

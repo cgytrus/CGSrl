@@ -30,7 +30,7 @@
     "chat.input": {
         "position": { "x": 0, "y": 71 },
         "size": { "x": 36, "y": 1 },
-        "placeholder": "message..."
+        "placeholder": "message... [T]"
     },
     "info": {
         "position": { "x": 100, "y": 0 },
