@@ -158,7 +158,7 @@ public class GameScreen : LayoutResource, IScreen {
         GetElement<Button>("spawner.objects.message").onClick += (_, _) => _spawnerCurrent = _spawnerMessage;
         GetElement<Button>("spawner.objects.grass").onClick += (_, _) => _spawnerCurrent = _spawnerGrass;
 
-        _level = new Level<SyncedLevelObject>(renderer, input, audio, _resources);
+        _level = new Level<SyncedLevelObject>(renderer, input, audio, _resources, new Vector2Int(16, 16));
         _level.objectAdded += obj => {
             if(obj is PlayerObject player)
                 _players?.Add(player);
@@ -535,7 +535,8 @@ public class GameScreen : LayoutResource, IScreen {
         _infoText.text = string.Format(_infoFormat,
             input.mousePosition,
             _level.ScreenToCameraPosition(input.mousePosition),
-            _level.ScreenToLevelPosition(input.mousePosition));
+            _level.ScreenToLevelPosition(input.mousePosition),
+            _level.ScreenToChunkPosition(input.mousePosition));
     }
 
     private static void SwitchToMainMenuWithError(string error) {

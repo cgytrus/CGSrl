@@ -130,8 +130,10 @@ public class GameServer {
             msg.Write(obj.id);
 
         msg.Write(_changedObjects.Count);
-        foreach(SyncedLevelObject obj in _changedObjects)
-            obj.WriteDataTo(msg);
+        foreach(SyncedLevelObject obj in _changedObjects) {
+            msg.Write(obj.id);
+            obj.WriteDynamicDataTo(msg);
+        }
 
         _peer.SendToAll(msg, NetDeliveryMethod.ReliableOrdered, 0);
 

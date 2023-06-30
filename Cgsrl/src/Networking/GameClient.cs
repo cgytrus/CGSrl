@@ -203,7 +203,7 @@ public class GameClient {
             logger.Warn("Object {} doesn't exist, ignoring object changed!", id);
             return;
         }
-        obj.ReadDataFrom(msg);
+        obj.ReadDynamicDataFrom(msg);
     }
 
     private void ProcessChatMessage(NetIncomingMessage msg) {

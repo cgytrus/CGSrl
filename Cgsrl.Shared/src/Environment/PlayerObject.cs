@@ -188,17 +188,23 @@ public class PlayerObject : SyncedLevelObject {
         position += move;
     }
 
-    public override void WriteDataTo(NetBuffer buffer) {
-        base.WriteDataTo(buffer);
+    protected override void WriteStaticDataTo(NetBuffer buffer) {
+        base.WriteStaticDataTo(buffer);
         buffer.Write(username);
         buffer.Write(displayName);
+    }
+    public override void WriteDynamicDataTo(NetBuffer buffer) {
+        base.WriteDynamicDataTo(buffer);
         buffer.Write(ping);
     }
 
-    public override void ReadDataFrom(NetBuffer buffer) {
-        base.ReadDataFrom(buffer);
+    protected override void ReadStaticDataFrom(NetBuffer buffer) {
+        base.ReadStaticDataFrom(buffer);
         _username = buffer.ReadString();
         _displayName = buffer.ReadString();
+    }
+    public override void ReadDynamicDataFrom(NetBuffer buffer) {
+        base.ReadDynamicDataFrom(buffer);
         _ping = buffer.ReadFloat();
         pingDirty = true;
     }

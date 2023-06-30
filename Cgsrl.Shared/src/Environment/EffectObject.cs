@@ -22,14 +22,14 @@ public class EffectObject : SyncedLevelObject {
                     renderer.formattingEffects.TryGetValue(this.effect, out IEffect? effect) ? effect : null);
     }
 
-    public override void WriteDataTo(NetBuffer buffer) {
-        base.WriteDataTo(buffer);
+    public override void WriteDynamicDataTo(NetBuffer buffer) {
+        base.WriteDynamicDataTo(buffer);
         buffer.Write(size);
         buffer.Write(effect);
     }
 
-    public override void ReadDataFrom(NetBuffer buffer) {
-        base.ReadDataFrom(buffer);
+    public override void ReadDynamicDataFrom(NetBuffer buffer) {
+        base.ReadDynamicDataFrom(buffer);
         size = buffer.ReadVector2Int();
         effect = buffer.ReadString();
     }

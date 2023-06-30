@@ -44,7 +44,7 @@
     },
     "info": {
         "position": { "x": 100, "y": 0 },
-        "text": "cursor pos:  \nscreen: {0}\ncamera: {1}\nlevel: {2}",
+        "text": "cursor pos:  \nscreen: {0}\ncamera: {1}\nlevel: {2}\nchunk: {3}",
         "align": "right"
     },
     "spawner.objects.floor": {

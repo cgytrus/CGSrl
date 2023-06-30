@@ -27,7 +27,7 @@ public class Game : IGame {
 
     public void Setup() {
         _level = new Level<SyncedLevelObject>(Core.engine.renderer, Core.engine.input, Core.engine.audio,
-            Core.engine.resources);
+            Core.engine.resources, new Vector2Int(16, 16));
 
         if(File.Exists(LevelPath))
             LoadLevel();

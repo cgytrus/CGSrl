@@ -24,16 +24,23 @@ public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> 
             GrassObject => (int)ObjectType.Grass,
             _ => int.MaxValue
         });
-        WriteDataTo(buffer);
+        WriteStaticDataTo(buffer);
+        WriteDynamicDataTo(buffer);
     }
-    public virtual void WriteDataTo(NetBuffer buffer) {
+
+    protected virtual void WriteStaticDataTo(NetBuffer buffer) {
         buffer.Write(id);
         buffer.Write(layer);
+    }
+    public virtual void WriteDynamicDataTo(NetBuffer buffer) {
         buffer.Write(position);
     }
 
-    public virtual void ReadDataFrom(NetBuffer buffer) {
+    protected virtual void ReadStaticDataFrom(NetBuffer buffer) {
+        id = buffer.ReadGuid();
         layer = buffer.ReadInt32();
+    }
+    public virtual void ReadDynamicDataFrom(NetBuffer buffer) {
         position = buffer.ReadVector2Int();
     }
 
@@ -51,8 +58,8 @@ public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> 
                 (int)ObjectType.Grass => new GrassObject(),
                 _ => new CorruptedObject()
             };
-            obj.id = buffer.ReadGuid();
-            obj.ReadDataFrom(buffer);
+            obj.ReadStaticDataFrom(buffer);
+            obj.ReadDynamicDataFrom(buffer);
             return obj;
         }
         catch {
