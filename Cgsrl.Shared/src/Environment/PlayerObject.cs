@@ -59,6 +59,11 @@ public class PlayerObject : SyncedLevelObject {
 
     private Vector2Int _prevPosition;
 
+    public override void Added() {
+        base.Added();
+        Moved();
+    }
+
     public override void Update(TimeSpan time) {
         if(connection is null)
             return;
@@ -164,6 +169,7 @@ public class PlayerObject : SyncedLevelObject {
             if(level.TryGetObjectAt(position + move, out pushable) && !pushable.TryMove(move))
                 return;
             position += move;
+            Moved();
             _lastNonZeroMove = move;
             return;
         }
@@ -186,6 +192,14 @@ public class PlayerObject : SyncedLevelObject {
         if(level.TryGetObjectAt(position + move, out pushable) && !pushable.TryMove(move))
             return;
         position += move;
+        Moved();
+    }
+
+    private void Moved() {
+        Vector2Int currentChunk = level.LevelToChunkPosition(position);
+        for(int x = currentChunk.x - 5; x <= currentChunk.x + 5; x++)
+            for(int y = currentChunk.y - 3; y <= currentChunk.y + 3; y++)
+                level.CreateChunkAt(new Vector2Int(x, y));
     }
 
     protected override void WriteStaticDataTo(NetBuffer buffer) {

@@ -29,12 +29,26 @@ public class Game : IGame {
         _level = new Level<SyncedLevelObject>(Core.engine.renderer, Core.engine.input, Core.engine.audio,
             Core.engine.resources, new Vector2Int(16, 16));
 
-        if(File.Exists(LevelPath))
+        if(File.Exists(LevelPath)) {
             LoadLevel();
-        else
+            _level.chunkCreated += GenerateChunk;
+        }
+        else {
+            _level.chunkCreated += GenerateChunk;
             CreateTestLevel();
+        }
 
         _server = new GameServer(_level, 12420);
+    }
+
+    private void GenerateChunk(Bounds bounds) {
+        if(_level is null)
+            return;
+        for(int x = bounds.min.x; x <= bounds.max.x; x++) {
+            for(int y = bounds.min.y; y <= bounds.max.y; y++) {
+                _level.Add(new FloorObject { layer = -10, position = new Vector2Int(x, y) });
+            }
+        }
     }
 
     public void Tick(TimeSpan time) {
@@ -55,8 +69,7 @@ public class Game : IGame {
 
         for(int y = -20; y <= 20; y++) {
             for(int x = -20; x <= 20; x++) {
-                _level.Add(new FloorObject { layer = -1, position = new Vector2Int(x, y) });
-                _level.Add(new IceObject { layer = -1, position = new Vector2Int(x, y + 41) });
+                _level.Add(new IceObject { layer = -2, position = new Vector2Int(x, y + 41) });
                 _level.Add(new GrassObject { layer = -1, position = new Vector2Int(x, y + 41 + 41) });
             }
         }
@@ -67,20 +80,20 @@ public class Game : IGame {
         _level.Add(new MessageObject { layer = 1, position = new Vector2Int(1, 5) });
 
         for(int i = -5; i <= 5; i++)
-            _level.Add(new WallObject { layer = 1, position = new Vector2Int(i, -5) });
+            _level.Add(new WallObject { layer = 2, position = new Vector2Int(i, -5) });
         for(int i = 0; i < 100; i++)
-            _level.Add(new WallObject { layer = 1, position = new Vector2Int(i, -8) });
+            _level.Add(new WallObject { layer = 2, position = new Vector2Int(i, -8) });
         for(int i = 0; i < 30; i++)
-            _level.Add(new WallObject { layer = 1, position = new Vector2Int(8, i - 7) });
+            _level.Add(new WallObject { layer = 2, position = new Vector2Int(8, i - 7) });
 
         _level.Add(new EffectObject {
-            layer = 2,
+            layer = 10,
             position = new Vector2Int(3, -10),
             size = new Vector2Int(10, 10),
             effect = "glitch"
         });
         _level.Add(new EffectObject {
-            layer = 2,
+            layer = 10,
             position = new Vector2Int(-12, -24),
             size = new Vector2Int(6, 9),
             effect = "glitch"

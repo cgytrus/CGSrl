@@ -67,11 +67,11 @@ public class GameScreen : LayoutResource, IScreen {
     private string _infoFormat = "{0} {1} {2}";
 
     private SyncedLevelObject _spawnerCurrent;
-    private readonly FloorObject _spawnerFloor = new() { layer = -1 };
-    private readonly WallObject _spawnerWall = new() { layer = 1 };
+    private readonly FloorObject _spawnerFloor = new() { layer = -10 };
+    private readonly WallObject _spawnerWall = new() { layer = 2 };
     private readonly BoxObject _spawnerBox = new() { layer = 1 };
-    private readonly EffectObject _spawnerEffect = new() { layer = 2 };
-    private readonly IceObject _spawnerIce = new() { layer = -1 };
+    private readonly EffectObject _spawnerEffect = new() { layer = 10 };
+    private readonly IceObject _spawnerIce = new() { layer = -2 };
     private readonly MessageObject _spawnerMessage = new() { layer = 1 };
     private readonly GrassObject _spawnerGrass = new() { layer = -1 };
 
