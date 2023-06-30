@@ -181,7 +181,7 @@ public class GameClient {
         _level.Add(obj);
         if(obj is CorruptedObject) {
             obj.position = _lastObjPosition;
-            string text = $"Received corrupted object, placing it at {obj.position.x},{obj.position.y}!";
+            string text = $"Received corrupted object, placing it at {obj.position}!";
             logger.Warn(text);
             _messages.Insert(0, new ChatMessage(null, NetTime.Now, $"\f2{text}"));
         }
