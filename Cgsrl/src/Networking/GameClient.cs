@@ -143,14 +143,8 @@ public class GameClient {
 
     private void ProcessData(StcDataType type, NetIncomingMessage msg) {
         switch(type) {
-            case StcDataType.ObjectAdded:
-                ProcessObjectAdded(msg);
-                break;
-            case StcDataType.ObjectRemoved:
-                ProcessObjectRemoved(msg);
-                break;
-            case StcDataType.ObjectChanged:
-                ProcessObjectChanged(msg);
+            case StcDataType.ObjectsUpdated:
+                ProcessObjectsUpdated(msg);
                 break;
             case StcDataType.ChatMessage:
                 ProcessChatMessage(msg);
@@ -159,6 +153,20 @@ public class GameClient {
                 logger.Error("Unhandled STC data type: {}", type);
                 break;
         }
+    }
+
+    private void ProcessObjectsUpdated(NetIncomingMessage msg) {
+        int addedCount = msg.ReadInt32();
+        for(int i = 0; i < addedCount; i++)
+            ProcessObjectAdded(msg);
+
+        int removedCount = msg.ReadInt32();
+        for(int i = 0; i < removedCount; i++)
+            ProcessObjectRemoved(msg);
+
+        int changedCount = msg.ReadInt32();
+        for(int i = 0; i < changedCount; i++)
+            ProcessObjectChanged(msg);
     }
 
     private void ProcessObjectAdded(NetIncomingMessage msg) {

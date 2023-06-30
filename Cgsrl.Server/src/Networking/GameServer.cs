@@ -23,6 +23,10 @@ public class GameServer {
     private readonly Level<SyncedLevelObject> _level;
     private readonly Commands _commands;
 
+    private readonly List<SyncedLevelObject> _addedObjects = new();
+    private readonly List<SyncedLevelObject> _removedObjects = new();
+    private readonly List<SyncedLevelObject> _changedObjects = new();
+
     public GameServer(Level<SyncedLevelObject> level, int port) {
         _level = level;
         _commands = new Commands(this, level);
@@ -55,22 +59,13 @@ public class GameServer {
         _peer = new NetServer(config);
 
         _level.objectAdded += obj => {
-            NetOutgoingMessage msg = _peer.CreateMessage(SyncedLevelObject.PreallocSize);
-            msg.Write((byte)StcDataType.ObjectAdded);
-            obj.WriteTo(msg);
-            _peer.SendToAll(msg, NetDeliveryMethod.ReliableOrdered, 0);
+            _addedObjects.Add(obj);
         };
         _level.objectRemoved += obj => {
-            NetOutgoingMessage msg = _peer.CreateMessage(17);
-            msg.Write((byte)StcDataType.ObjectRemoved);
-            msg.Write(obj.id);
-            _peer.SendToAll(msg, NetDeliveryMethod.ReliableOrdered, 0);
+            _removedObjects.Add(obj);
         };
         _level.objectChanged += obj => {
-            NetOutgoingMessage msg = _peer.CreateMessage(SyncedLevelObject.PreallocSize);
-            msg.Write((byte)StcDataType.ObjectChanged);
-            obj.WriteDataTo(msg);
-            _peer.SendToAll(msg, NetDeliveryMethod.ReliableOrdered, 0);
+            _changedObjects.Add(obj);
         };
 
         _peer.Start();
@@ -79,12 +74,17 @@ public class GameServer {
     }
 
     public void Finish() {
+        _addedObjects.Clear();
+        _removedObjects.Clear();
+        _changedObjects.Clear();
+
         _uptimeStopwatch.Reset();
         _peer.Shutdown("Server closed");
         logger.Info("Server stopped");
     }
 
     public void ProcessMessages() {
+        ProcessObjectUpdates();
         while(_peer.ReadMessage(out NetIncomingMessage msg)) {
             switch(msg.MessageType) {
                 case NetIncomingMessageType.WarningMessage:
@@ -112,6 +112,32 @@ public class GameServer {
             }
             _peer.Recycle(msg);
         }
+    }
+
+    private void ProcessObjectUpdates() {
+        if(_addedObjects.Count == 0 && _removedObjects.Count == 0 && _changedObjects.Count == 0)
+            return;
+
+        NetOutgoingMessage msg = _peer.CreateMessage(SyncedLevelObject.PreallocSize);
+        msg.Write((byte)StcDataType.ObjectsUpdated);
+
+        msg.Write(_addedObjects.Count);
+        foreach(SyncedLevelObject obj in _addedObjects)
+            obj.WriteTo(msg);
+
+        msg.Write(_removedObjects.Count);
+        foreach(SyncedLevelObject obj in _removedObjects)
+            msg.Write(obj.id);
+
+        msg.Write(_changedObjects.Count);
+        foreach(SyncedLevelObject obj in _changedObjects)
+            obj.WriteDataTo(msg);
+
+        _peer.SendToAll(msg, NetDeliveryMethod.ReliableOrdered, 0);
+
+        _addedObjects.Clear();
+        _removedObjects.Clear();
+        _changedObjects.Clear();
     }
 
     private void ProcessConnectionApproval(NetIncomingMessage msg) {
