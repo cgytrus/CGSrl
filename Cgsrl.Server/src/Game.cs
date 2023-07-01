@@ -7,18 +7,17 @@ using Lidgren.Network;
 using NLog;
 
 using PER.Abstractions;
-using PER.Abstractions.Environment;
 using PER.Abstractions.Rendering;
 using PER.Util;
 
 namespace Cgsrl.Server;
 
-public class Game : IGame {
+public class Game : IGame, ISetupable, ITickable {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     private const string LevelPath = "level.bin";
 
-    private Level<SyncedLevelObject>? _level;
+    private SyncedLevel? _level;
     private GameServer? _server;
 
     public void Unload() { }
@@ -26,7 +25,7 @@ public class Game : IGame {
     public RendererSettings Loaded() => new();
 
     public void Setup() {
-        _level = new Level<SyncedLevelObject>(Core.engine.renderer, Core.engine.input, Core.engine.audio,
+        _level = new SyncedLevel(false, Core.engine.renderer, Core.engine.input, Core.engine.audio,
             Core.engine.resources, new Vector2Int(16, 16));
 
         if(File.Exists(LevelPath)) {
@@ -135,11 +134,4 @@ public class Game : IGame {
         File.WriteAllBytes(LevelPath, buffer.Data[..buffer.LengthBytes]);
         logger.Info("Level saved");
     }
-
-    public void Update(TimeSpan time) => throw new InvalidOperationException();
-    public IScreen? currentScreen => null;
-    public void SwitchScreen(IScreen? screen, Func<bool>? middleCallback = null) => throw new InvalidOperationException();
-    public void SwitchScreen(IScreen? screen, float fadeOutTime, float fadeInTime, Func<bool>? middleCallback = null) => throw new InvalidOperationException();
-    public void FadeScreen(Action middleCallback) => throw new InvalidOperationException();
-    public void FadeScreen(float fadeOutTime, float fadeInTime, Action middleCallback) => throw new InvalidOperationException();
 }

@@ -12,11 +12,10 @@ using NLog;
 
 using PER.Abstractions;
 using PER.Abstractions.Audio;
-using PER.Abstractions.Environment;
 using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
-using PER.Abstractions.UI;
+using PER.Abstractions.Screens;
 using PER.Common.Effects;
 using PER.Util;
 
@@ -25,7 +24,7 @@ using PRR.UI.Resources;
 
 namespace Cgsrl.Screens;
 
-public class GameScreen : LayoutResource, IScreen {
+public class GameScreen : LayoutResource, IScreen, IUpdatable {
     public const string GlobalId = "layouts/game";
 
     private const float MessageFadeInTime = 0.5f;
@@ -46,7 +45,7 @@ public class GameScreen : LayoutResource, IScreen {
 
     private readonly IResources _resources;
     private GameClient? _client;
-    private Level<SyncedLevelObject>? _level;
+    private SyncedLevel? _level;
 
     private Text? _loadingTextCenter;
     private Text? _loadingTextBottom;
@@ -158,7 +157,7 @@ public class GameScreen : LayoutResource, IScreen {
         GetElement<Button>("spawner.objects.message").onClick += (_, _) => _spawnerCurrent = _spawnerMessage;
         GetElement<Button>("spawner.objects.grass").onClick += (_, _) => _spawnerCurrent = _spawnerGrass;
 
-        _level = new Level<SyncedLevelObject>(renderer, input, audio, _resources, new Vector2Int(16, 16));
+        _level = new SyncedLevel(true, renderer, input, audio, _resources, new Vector2Int(16, 16));
         _level.objectAdded += obj => {
             if(obj is PlayerObject player)
                 _players?.Add(player);
@@ -541,7 +540,7 @@ public class GameScreen : LayoutResource, IScreen {
 
     private static void SwitchToMainMenuWithError(string error) {
         if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
-            Core.engine.game.SwitchScreen(screen, () => {
+            Core.engine.screens.SwitchScreen(screen, () => {
                 screen.ShowConnectionError(error);
                 return true;
             });
@@ -549,8 +548,6 @@ public class GameScreen : LayoutResource, IScreen {
 
     private static void SwitchToMainMenu() {
         if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
-            Core.engine.game.SwitchScreen(screen);
+            Core.engine.screens.SwitchScreen(screen);
     }
-
-    public void Tick(TimeSpan time) { }
 }

@@ -10,7 +10,6 @@ using NBrigadier.Builder;
 using NBrigadier.Context;
 using NBrigadier.Tree;
 
-using PER.Abstractions.Environment;
 using PER.Util;
 
 namespace Cgsrl.Server.Networking;
@@ -21,9 +20,9 @@ public class Commands {
     private readonly Dictionary<CommandNode<PlayerObject?>, string> _descriptions = new();
 
     private readonly GameServer _server;
-    private readonly Level<SyncedLevelObject> _level;
+    private readonly SyncedLevel _level;
 
-    public Commands(GameServer server, Level<SyncedLevelObject> level) {
+    public Commands(GameServer server, SyncedLevel level) {
         _server = server;
         _level = level;
 

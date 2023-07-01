@@ -3,6 +3,7 @@
 using PER;
 using PER.Audio.Sfml;
 using PER.Common.Resources;
+using PER.Common.Screens;
 using PER.Util;
 
 using PRR.Sfml;
@@ -23,7 +24,8 @@ public static class Core {
     private static readonly Renderer renderer = new();
 
     public static Engine engine { get; } =
-        new(new ResourcesManager(), new Game(), renderer, new InputManager(renderer), new AudioManager()) {
+        new(new ResourcesManager(), new ScreenManager(renderer), new Game(), renderer, new InputManager(renderer),
+            new AudioManager()) {
             tickInterval = TimeSpan.FromSeconds(-1d) // don't tick
         };
 

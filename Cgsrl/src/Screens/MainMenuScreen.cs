@@ -4,7 +4,7 @@ using PER.Abstractions;
 using PER.Abstractions.Audio;
 using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
-using PER.Abstractions.UI;
+using PER.Abstractions.Screens;
 using PER.Util;
 
 using PRR.UI;
@@ -12,7 +12,7 @@ using PRR.UI.Resources;
 
 namespace Cgsrl.Screens;
 
-public class MainMenuScreen : LayoutResource, IScreen {
+public class MainMenuScreen : LayoutResource, IScreen, IUpdatable {
     public const string GlobalId = "layouts/mainMenu";
 
     protected override IRenderer renderer => Core.engine.renderer;
@@ -56,7 +56,7 @@ public class MainMenuScreen : LayoutResource, IScreen {
         GetElement<Button>("play").hotkey = KeyCode.Enter;
         GetElement<Button>("play").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(GameScreen.GlobalId, out GameScreen? screen))
-                Core.engine.game.SwitchScreen(screen, () => {
+                Core.engine.screens.SwitchScreen(screen, () => {
                     screen.Connect(playAddress.value ?? "", playUsername.value ?? "",
                         string.IsNullOrWhiteSpace(playDisplayName.value) ? playUsername.value ?? "" :
                             playDisplayName.value ?? "");
@@ -73,11 +73,11 @@ public class MainMenuScreen : LayoutResource, IScreen {
 
         GetElement<Button>("settings").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(SettingsScreen.GlobalId, out SettingsScreen? screen))
-                Core.engine.game.SwitchScreen(screen);
+                Core.engine.screens.SwitchScreen(screen);
         };
 
         GetElement<Button>("exit").onClick += (_, _) => {
-            Core.engine.game.SwitchScreen(null);
+            Core.engine.screens.SwitchScreen(null);
         };
 
         GetElement<Button>("sfml").onClick += (_, _) => {
@@ -119,14 +119,12 @@ public class MainMenuScreen : LayoutResource, IScreen {
         _connectionErrorDialogBox?.Update(time);
     }
 
-    public void Tick(TimeSpan time) { }
-
     public void ShowConnectionError(string error) {
         if(!Core.engine.resources.TryGetResource(ConnectionErrorDialogBoxScreen.GlobalId,
             out _connectionErrorDialogBox)) {
             return;
         }
-        _connectionErrorDialogBox.onOk += () => Core.engine.game.FadeScreen(CloseConnectionError);
+        _connectionErrorDialogBox.onOk += () => Core.engine.screens.FadeScreen(CloseConnectionError);
         _connectionErrorDialogBox.text = error;
         _connectionErrorDialogBox.Open();
     }

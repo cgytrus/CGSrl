@@ -6,7 +6,7 @@ using PER.Abstractions.Environment;
 
 namespace Cgsrl.Shared.Networking;
 
-public abstract class SyncedLevelObject : LevelObject<Level<SyncedLevelObject>> {
+public abstract class SyncedLevelObject : LevelObject<SyncedLevel, SyncedChunk, SyncedLevelObject> {
     private enum ObjectType { Player, Floor, Wall, Box, Effect, Ice, Message, Grass }
 
     //                              id   layer         position          extra

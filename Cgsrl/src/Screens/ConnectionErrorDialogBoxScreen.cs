@@ -51,6 +51,4 @@ public class ConnectionErrorDialogBoxScreen : DialogBoxScreenResource {
         base.Close();
         onOk = null;
     }
-
-    public override void Tick(TimeSpan time) { }
 }

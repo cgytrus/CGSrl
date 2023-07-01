@@ -12,8 +12,6 @@ public class EffectObject : SyncedLevelObject {
     public string effect { get; set; } = "none";
 
     protected override RenderCharacter character { get; } = new('a', Color.transparent, Color.white);
-    public override void Update(TimeSpan time) { }
-    public override void Tick(TimeSpan time) { }
     public override void Draw() {
         Vector2Int pos = level.LevelToScreenPosition(position);
         for(int y = Math.Clamp(pos.y, 0, renderer.height); y < Math.Clamp(pos.y + size.y, 0, renderer.height); y++)

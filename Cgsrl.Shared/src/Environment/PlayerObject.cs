@@ -4,13 +4,15 @@ using Cgsrl.Shared.Networking;
 
 using Lidgren.Network;
 
+using PER.Abstractions;
+using PER.Abstractions.Environment;
 using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Util;
 
 namespace Cgsrl.Shared.Environment;
 
-public class PlayerObject : SyncedLevelObject {
+public class PlayerObject : SyncedLevelObject, IAddable, IUpdatable, ITickable, IMovable {
     protected override RenderCharacter character => new('@',
         highlighted ? new Color(1f, 1f, 0f, 0.2f) : Color.transparent, new Color(0, 255, 255, 255));
 
@@ -59,7 +61,9 @@ public class PlayerObject : SyncedLevelObject {
 
     private Vector2Int _prevPosition;
 
-    public override void Update(TimeSpan time) {
+    public void Added() => Moved();
+
+    public void Update(TimeSpan time) {
         if(connection is null)
             return;
         UpdateInteraction();
@@ -118,7 +122,7 @@ public class PlayerObject : SyncedLevelObject {
 
     // shtu up
     // ReSharper disable once CognitiveComplexity
-    public override void Tick(TimeSpan time) {
+    public void Tick(TimeSpan time) {
         int moveX = this.move.x;
         int moveY = this.move.y;
         bool iceSlowingDown = false;
@@ -188,7 +192,9 @@ public class PlayerObject : SyncedLevelObject {
         position += move;
     }
 
-    protected override void Moved() {
+    public void Moved() {
+        if(level.isClient)
+            return;
         Vector2Int currentChunk = level.LevelToChunkPosition(position);
         for(int x = currentChunk.x - 5; x <= currentChunk.x + 5; x++)
             for(int y = currentChunk.y - 3; y <= currentChunk.y + 3; y++)

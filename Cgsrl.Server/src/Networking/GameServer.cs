@@ -7,7 +7,6 @@ using Lidgren.Network;
 
 using NLog;
 
-using PER.Abstractions.Environment;
 using PER.Util;
 
 namespace Cgsrl.Server.Networking;
@@ -20,14 +19,14 @@ public class GameServer {
     private readonly Stopwatch _uptimeStopwatch = new();
 
     private readonly NetServer _peer;
-    private readonly Level<SyncedLevelObject> _level;
+    private readonly SyncedLevel _level;
     private readonly Commands _commands;
 
     private readonly List<SyncedLevelObject> _addedObjects = new();
     private readonly List<SyncedLevelObject> _removedObjects = new();
     private readonly List<SyncedLevelObject> _changedObjects = new();
 
-    public GameServer(Level<SyncedLevelObject> level, int port) {
+    public GameServer(SyncedLevel level, int port) {
         _level = level;
         _commands = new Commands(this, level);
 

@@ -16,15 +16,14 @@ using PRR.UI.Resources;
 
 namespace Cgsrl;
 
-public class Game : ScreenGame {
+public class Game : IGame, ISetupable, IUpdatable {
     private const string SettingsPath = "config.json";
     private Settings _settings = new();
 
     private DrawTextEffect? _drawTextEffect;
     private BloomEffect? _bloomEffect;
 
-    protected override FrameTime? frameTime => _settings.showFps ? Core.engine.frameTime : null;
-    protected override IRenderer renderer => Core.engine.renderer;
+    private static IRenderer renderer => Core.engine.renderer;
 
     private static TimeSpan fpsGood => (Core.engine.updateInterval > TimeSpan.Zero ? Core.engine.updateInterval :
         TimeSpan.FromSeconds(1d / 60d)) + TimeSpan.FromSeconds(0.001d);
@@ -35,9 +34,11 @@ public class Game : ScreenGame {
     private Color _fpsOkColor;
     private Color _fpsBadColor;
 
-    public override void Unload() => _settings.Save(SettingsPath);
+    private FrameTimeDisplay? _frameTimeDisplay;
 
-    public override void Load() {
+    public void Unload() => _settings.Save(SettingsPath);
+
+    public void Load() {
         IResources resources = Core.engine.resources;
 
         _settings = Settings.Load(SettingsPath);
@@ -64,7 +65,7 @@ public class Game : ScreenGame {
         resources.TryAddResource(ConnectionErrorDialogBoxScreen.GlobalId, new ConnectionErrorDialogBoxScreen());
     }
 
-    public override RendererSettings Loaded() {
+    public RendererSettings Loaded() {
         if(!Core.engine.resources.TryGetResource(FontResource.GlobalId, out FontResource? font) || font.font is null)
             throw new InvalidOperationException("Missing font.");
         Core.engine.resources.TryGetResource(IconResource.GlobalId, out IconResource? icon);
@@ -97,28 +98,30 @@ public class Game : ScreenGame {
         };
     }
 
-    public override void Setup() {
-        base.Setup();
+    public void Setup() {
+        _frameTimeDisplay = new FrameTimeDisplay(Core.engine.frameTime, renderer, FrameTimeFormatter);
         _settings.ApplyVolumes(); // apply volumes again because the first time the window isn't created yet
         Core.engine.renderer.focusChanged += (_, _) => _settings.ApplyVolumes();
         if(!Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
             return;
-        SwitchScreen(screen);
+        Core.engine.screens.SwitchScreen(screen);
     }
 
-    public override void Update(TimeSpan time) {
+    public void Update(TimeSpan time) {
         if(_drawTextEffect is not null)
             renderer.AddEffect(_drawTextEffect);
         if(_settings.bloom && _bloomEffect is not null)
             renderer.AddEffect(_bloomEffect);
-        base.Update(time);
+        _frameTimeDisplay?.Update(time);
     }
 
-    protected override Formatting FrameTimeFormatter(FrameTime frameTime, char flag) => flag switch {
+    public void Finish() { }
+
+    private Formatting FrameTimeFormatter(FrameTime frameTime, char flag) => flag switch {
         '1' or 'a' => new Formatting(frameTime.frameTime > fpsOk ? _fpsBadColor :
             frameTime.frameTime > fpsGood ? _fpsOkColor : _fpsGoodColor, Color.transparent),
         '2' or 'b' => new Formatting(frameTime.averageFrameTime > fpsOk ? _fpsBadColor :
             frameTime.averageFrameTime > fpsGood ? _fpsOkColor : _fpsGoodColor, Color.transparent),
-        _ => base.FrameTimeFormatter(frameTime, flag)
+        _ => new Formatting(Color.white, Color.transparent)
     };
 }

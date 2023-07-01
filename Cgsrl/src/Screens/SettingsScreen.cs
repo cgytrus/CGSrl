@@ -10,14 +10,14 @@ using PER.Abstractions.Audio;
 using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
-using PER.Abstractions.UI;
+using PER.Abstractions.Screens;
 
 using PRR.UI;
 using PRR.UI.Resources;
 
 namespace Cgsrl.Screens;
 
-public class SettingsScreen : LayoutResource, IScreen {
+public class SettingsScreen : LayoutResource, IScreen, IUpdatable {
     public const string GlobalId = "layouts/settings";
 
     protected override IRenderer renderer => Core.engine.renderer;
@@ -102,19 +102,19 @@ public class SettingsScreen : LayoutResource, IScreen {
             if(reload)
                 _reloadScheduled = true;
             if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
-                Core.engine.game.SwitchScreen(screen);
+                Core.engine.screens.SwitchScreen(screen);
         };
 
         GetElement<Button>("apply").onClick += (_, _) => {
             _reloadScheduled = true;
             if(Core.engine.resources.TryGetResource(GlobalId, out SettingsScreen? screen))
-                Core.engine.game.SwitchScreen(screen);
+                Core.engine.screens.SwitchScreen(screen);
         };
 
         GetElement<Button>("reload").onClick += (_, _) => {
             Core.engine.Reload();
             if(Core.engine.resources.TryGetResource(GlobalId, out SettingsScreen? screen))
-                Core.engine.game.SwitchScreen(screen);
+                Core.engine.screens.SwitchScreen(screen);
         };
     }
 
@@ -251,6 +251,4 @@ public class SettingsScreen : LayoutResource, IScreen {
         Core.engine.resources.TryAddPacksByNames(_settings.packs);
         Core.engine.SoftReload();
     }
-
-    public void Tick(TimeSpan time) { }
 }

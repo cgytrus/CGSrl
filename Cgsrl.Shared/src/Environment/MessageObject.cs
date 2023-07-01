@@ -11,8 +11,6 @@ public class MessageObject : InteractableObject {
     public override string prompt => "send";
 
     protected override RenderCharacter character { get; } = new('!', Color.transparent, Color.white);
-    public override void Update(TimeSpan time) { }
-    public override void Tick(TimeSpan time) { }
 
     public override void Interact(PlayerObject player) {
         if(player.connection is null)

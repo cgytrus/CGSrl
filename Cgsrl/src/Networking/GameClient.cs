@@ -7,7 +7,6 @@ using Lidgren.Network;
 
 using NLog;
 
-using PER.Abstractions.Environment;
 using PER.Util;
 
 using PRR.UI;
@@ -29,7 +28,7 @@ public class GameClient {
     public int totalJoinedObjectCount { get; private set; }
     public int leftJoinedObjectCount { get; private set; }
 
-    private readonly Level<SyncedLevelObject> _level;
+    private readonly SyncedLevel _level;
     private readonly ListBox<ChatMessage> _messages;
 
     private readonly Stopwatch _timer = new();
@@ -38,7 +37,7 @@ public class GameClient {
 
     private Vector2Int _lastObjPosition;
 
-    public GameClient(Level<SyncedLevelObject> level, ListBox<ChatMessage> messages) {
+    public GameClient(SyncedLevel level, ListBox<ChatMessage> messages) {
         _level = level;
         _messages = messages;
 
