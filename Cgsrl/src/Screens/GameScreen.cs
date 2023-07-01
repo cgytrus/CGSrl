@@ -110,8 +110,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         AddElement<Button>("spawner.objects.ice");
         AddElement<Button>("spawner.objects.message");
         AddElement<Button>("spawner.objects.grass");
-        AddElement<InputField>("spawner.width");
-        AddElement<InputField>("spawner.height");
         AddElement<InputField>("spawner.effect");
     }
 
@@ -430,9 +428,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         _spawnerCurrent.position = _level.ScreenToLevelPosition(input.mousePosition);
 
         if(_spawnerCurrent is EffectObject effectObject) {
-            if(int.TryParse(GetElement<InputField>("spawner.width").value, out int width) &&
-                int.TryParse(GetElement<InputField>("spawner.height").value, out int height))
-                effectObject.size = new Vector2Int(width, height);
             effectObject.effect = GetElement<InputField>("spawner.effect").value ?? "none";
         }
 

@@ -8,27 +8,21 @@ using PER.Util;
 namespace Cgsrl.Shared.Environment;
 
 public class EffectObject : SyncedLevelObject {
-    public Vector2Int size { get; set; }
     public string effect { get; set; } = "none";
 
     protected override RenderCharacter character { get; } = new('a', Color.transparent, Color.white);
     public override void Draw() {
-        Vector2Int pos = level.LevelToScreenPosition(position);
-        for(int y = Math.Clamp(pos.y, 0, renderer.height); y < Math.Clamp(pos.y + size.y, 0, renderer.height); y++)
-            for(int x = Math.Clamp(pos.x, 0, renderer.width); x < Math.Clamp(pos.x + size.x, 0, renderer.width); x++)
-                renderer.AddEffect(new Vector2Int(x, y),
-                    renderer.formattingEffects.TryGetValue(this.effect, out IEffect? effect) ? effect : null);
+        renderer.AddEffect(level.LevelToScreenPosition(position),
+            renderer.formattingEffects.TryGetValue(this.effect, out IEffect? effect) ? effect : null);
     }
 
     public override void WriteDynamicDataTo(NetBuffer buffer) {
         base.WriteDynamicDataTo(buffer);
-        buffer.Write(size);
         buffer.Write(effect);
     }
 
     public override void ReadDynamicDataFrom(NetBuffer buffer) {
         base.ReadDynamicDataFrom(buffer);
-        size = buffer.ReadVector2Int();
         effect = buffer.ReadString();
     }
 }

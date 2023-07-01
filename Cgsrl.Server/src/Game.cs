@@ -83,18 +83,20 @@ public class Game : IGame, ISetupable, ITickable {
         for(int i = 0; i < 30; i++)
             _level.Add(new WallObject { layer = 2, position = new Vector2Int(8, i - 7) });
 
-        _level.Add(new EffectObject {
-            layer = 10,
-            position = new Vector2Int(3, -10),
-            size = new Vector2Int(10, 10),
-            effect = "glitch"
-        });
-        _level.Add(new EffectObject {
-            layer = 10,
-            position = new Vector2Int(-12, -24),
-            size = new Vector2Int(6, 9),
-            effect = "glitch"
-        });
+        for(int y = 0; y < 10; y++)
+            for(int x = 0; x < 10; x++)
+                _level.Add(new EffectObject {
+                    layer = 10,
+                    position = new Vector2Int(3, -10) + new Vector2Int(x, y),
+                    effect = "glitch"
+                });
+        for(int y = 0; y < 6; y++)
+            for(int x = 0; x < 9; x++)
+                _level.Add(new EffectObject {
+                    layer = 10,
+                    position = new Vector2Int(-12, -24) + new Vector2Int(x, y),
+                    effect = "glitch"
+                });
 
         for(int i = 0; i < 1000; i++)
             _level.Add(new BoxObject { layer = 1, position = new Vector2Int(-i - 20, 0) });
