@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Net;
 
+using Cgsrl.Server.Arguments;
 using Cgsrl.Shared.Environment;
 using Cgsrl.Shared.Networking;
 
@@ -117,14 +118,11 @@ public class Commands {
                     TeleportCommand(context, StringArgumentType.GetString(context, "username"));
                     return 1;
                 }))
-            .Then(RequiredArgumentBuilder<PlayerObject?, int>.Argument("x", IntegerArgumentType.Integer())
-                .Then(RequiredArgumentBuilder<PlayerObject?, int>.Argument("y", IntegerArgumentType.Integer())
-                    .Executes(context => {
-                        TeleportCommand(context,
-                            new Vector2Int(IntegerArgumentType.GetInteger(context, "x"),
-                                IntegerArgumentType.GetInteger(context, "y")));
-                        return 1;
-                    })))
+            .Then(RequiredArgumentBuilder<PlayerObject?, IPosArgument>.Argument("position", new Vector2IntArgumentType())
+                .Executes(context => {
+                    TeleportCommand(context, Vector2IntArgumentType.GetVector2Int(context, "position"));
+                    return 1;
+                }))
         ), "Teleports you to the specified position.");
 
         _descriptions.Add(dispatcher.Register(LiteralArgumentBuilder<PlayerObject?>.Literal("kick")
@@ -235,7 +233,7 @@ public class Commands {
 
         context.Source.position = position;
         _server.SendChatMessage(null, context.Source,
-            $"Teleported \fb{context.Source.displayName}\f\0 to \fb{position.x}, {position.y}");
+            $"Teleported \fb{context.Source.displayName}\f\0 to \fb{position}");
     }
 
     private void KickCommand(CommandContext<PlayerObject?> context, string username,
