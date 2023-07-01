@@ -7,8 +7,14 @@ using PER.Util;
 namespace Cgsrl.Shared.Environment;
 
 public class FloorObject : SyncedLevelObject, IAddable {
-    private const float PerlinScale = 10f;
     private const float PerlinValue = 0.05f;
+
+    private static readonly FastNoiseLite noise = new();
+
+    static FloorObject() {
+        noise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
+        noise.SetFrequency(0.1f);
+    }
 
     protected override RenderCharacter character => _character;
     private RenderCharacter _character;
@@ -16,8 +22,7 @@ public class FloorObject : SyncedLevelObject, IAddable {
     public void Added() {
         if(!level.isClient)
             return;
-        float p = Perlin.Get(MathF.Abs(position.x / PerlinScale), MathF.Abs(position.y / PerlinScale), 0f) *
-            PerlinValue * 2f - PerlinValue;
+        float p = noise.GetNoise(MathF.Abs(position.x), MathF.Abs(position.y)) * PerlinValue;
         _character = new RenderCharacter('.', Color.transparent, new Color(0.1f + p, 0.1f + p, 0.1f + p, 1f));
     }
 }
