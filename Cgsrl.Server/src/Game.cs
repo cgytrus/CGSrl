@@ -41,14 +41,12 @@ public class Game : IGame {
         _server = new GameServer(_level, 12420);
     }
 
-    private void GenerateChunk(Bounds bounds) {
+    private void GenerateChunk(Vector2Int start, Vector2Int size) {
         if(_level is null)
             return;
-        for(int x = bounds.min.x; x <= bounds.max.x; x++) {
-            for(int y = bounds.min.y; y <= bounds.max.y; y++) {
-                _level.Add(new FloorObject { layer = -10, position = new Vector2Int(x, y) });
-            }
-        }
+        for(int x = 0; x < size.x; x++)
+            for(int y = 0; y < size.y; y++)
+                _level.Add(new FloorObject { layer = -10, position = start + new Vector2Int(x, y) });
     }
 
     public void Tick(TimeSpan time) {
