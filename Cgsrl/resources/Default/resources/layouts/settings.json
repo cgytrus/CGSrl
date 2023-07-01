@@ -77,8 +77,8 @@
     "fpsLimit": {
         "position": { "x": 14, "y": 29 },
         "width": 19,
-        "minValue": -1,
-        "maxValue": 17
+        "minValue": 0,
+        "maxValue": 18
     },
     "fpsLimit.label": {
         "text": "FPS LIMIT",

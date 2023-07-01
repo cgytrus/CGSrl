@@ -26,10 +26,10 @@ public class Game : ScreenGame {
     protected override FrameTime? frameTime => _settings.showFps ? Core.engine.frameTime : null;
     protected override IRenderer renderer => Core.engine.renderer;
 
-    // 59 instead of 60 because time measuring isn't exactly perfect
-    // so it may be a little more or less than 60 every frame
-    private static readonly TimeSpan fpsGood = TimeSpan.FromSeconds(1d / 59d);
-    private static readonly TimeSpan fpsOk = TimeSpan.FromSeconds(1d / 30d);
+    private static TimeSpan fpsGood => (Core.engine.updateInterval > TimeSpan.Zero ? Core.engine.updateInterval :
+        TimeSpan.FromSeconds(1d / 60d)) + TimeSpan.FromSeconds(0.001d);
+    private static TimeSpan fpsOk => (Core.engine.updateInterval > TimeSpan.Zero ? Core.engine.updateInterval * 2 :
+        TimeSpan.FromSeconds(1d / 60d) * 2) + TimeSpan.FromSeconds(0.001d);
 
     private Color _fpsGoodColor;
     private Color _fpsOkColor;
@@ -84,11 +84,13 @@ public class Game : ScreenGame {
 
         _settings.ApplyVolumes();
 
+        Core.engine.updateInterval =
+            _settings.fpsLimit <= 0 ? TimeSpan.Zero : TimeSpan.FromSeconds(1d / _settings.fpsLimit);
         return new RendererSettings {
             title = "CGSrl",
             width = 128,
             height = 72,
-            framerate = _settings.fpsLimit,
+            verticalSync = _settings.fpsLimit < 0,
             fullscreen = _settings.fullscreen,
             font = font.font,
             icon = icon?.icon

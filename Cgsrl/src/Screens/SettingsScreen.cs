@@ -40,6 +40,9 @@ public class SettingsScreen : LayoutResource, IScreen {
 
     private readonly Settings _settings;
 
+    private readonly int[] _fpsValues =
+        { -1, 0, 30, 60, 72, 120, 144, 180, 240, 288, 360, 420, 432, 480, 540, 576, 600, 660, 720 };
+
     private readonly List<ResourcePackData> _availablePacks = new();
     private readonly HashSet<ResourcePackData> _loadedPacks = new();
 
@@ -167,11 +170,16 @@ public class SettingsScreen : LayoutResource, IScreen {
 
         Slider fpsLimit = GetElement<Slider>("fpsLimit");
         fpsLimit.onValueChanged += (_, _) => {
-            _settings.fpsLimit = (int)fpsLimit.value * 60;
-            Core.engine.renderer.framerate = _settings.fpsLimit;
-            GetElement<Text>("fpsLimit.value").text = (int)fpsLimit.value switch {
-                (int)ReservedFramerates.Vsync => "VSync",
-                (int)ReservedFramerates.Unlimited => "Unlimited",
+            int fpsLimitValue = (int)fpsLimit.value;
+            if(fpsLimitValue >= 0 && fpsLimitValue < _fpsValues.Length) {
+                _settings.fpsLimit = _fpsValues[fpsLimitValue];
+                Core.engine.renderer.verticalSync = _settings.fpsLimit < 0;
+                Core.engine.updateInterval =
+                    _settings.fpsLimit <= 0 ? TimeSpan.Zero : TimeSpan.FromSeconds(1d / _settings.fpsLimit);
+            }
+            GetElement<Text>("fpsLimit.value").text = fpsLimitValue switch {
+                0 => "VSync",
+                1 => "Unlimited",
                 _ => _settings.fpsLimit.ToString(culture)
             };
         };
@@ -192,7 +200,7 @@ public class SettingsScreen : LayoutResource, IScreen {
         GetElement<Slider>("volume.sfx").value = _settings.sfxVolume;
         GetElement<Button>("bloom").toggled = _settings.bloom;
         GetElement<Button>("fullscreen").toggled = _settings.fullscreen;
-        GetElement<Slider>("fpsLimit").value = _settings.fpsLimit / 60f;
+        GetElement<Slider>("fpsLimit").value = Array.IndexOf(_fpsValues, _settings.fpsLimit);
         GetElement<Button>("showFps").toggled = _settings.showFps;
 
         GetElement<Text>("pack.description").text = "";

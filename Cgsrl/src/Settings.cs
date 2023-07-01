@@ -16,7 +16,7 @@ public class Settings {
     public float sfxVolume { get; set; } = 1f;
     public bool bloom { get; set; }
     public bool fullscreen { get; set; }
-    public int fpsLimit { get; set; }
+    public int fpsLimit { get; set; } = -1; // default to VSync
     public bool showFps { get; set; } = true;
 
     public static Settings Load(string path) {
