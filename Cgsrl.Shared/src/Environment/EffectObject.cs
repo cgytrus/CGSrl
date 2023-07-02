@@ -13,7 +13,7 @@ public class EffectObject : SyncedLevelObject {
     protected override RenderCharacter character { get; } = new('a', Color.transparent, Color.white);
     public override void Draw() {
         renderer.AddEffect(level.LevelToScreenPosition(position),
-            renderer.formattingEffects.TryGetValue(this.effect, out IEffect? effect) ? effect : null);
+            renderer.formattingEffects.TryGetValue(this.effect, out IDisplayEffect? effect) ? effect : null);
     }
 
     public override void WriteDynamicDataTo(NetBuffer buffer) {

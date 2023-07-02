@@ -9,5 +9,5 @@ namespace Cgsrl.Shared.Environment;
 public class CorruptedObject : SyncedLevelObject {
     protected override RenderCharacter character { get; } = new('\0', Color.white, Color.transparent);
     public override void Draw() => renderer.DrawCharacter(level.LevelToScreenPosition(position), character,
-        RenderOptions.Default, renderer.formattingEffects["glitch"]);
+        renderer.formattingEffects["glitch"]);
 }
