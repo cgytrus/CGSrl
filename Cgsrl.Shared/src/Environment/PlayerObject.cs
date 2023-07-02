@@ -59,9 +59,7 @@ public class PlayerObject : SyncedLevelObject, IAddable, IUpdatable, ITickable, 
     // client-side only, have to do this cuz it's in the shared project and i don't wanna depend on PRR.UI here xd
     public object? text { get; set; }
 
-    private Vector2Int _prevPosition;
-
-    public void Added() => Moved();
+    public void Added() => Moved(position);
 
     public void Update(TimeSpan time) {
         if(connection is null)
@@ -101,23 +99,13 @@ public class PlayerObject : SyncedLevelObject, IAddable, IUpdatable, ITickable, 
         if(input.KeyPressed(KeyCode.W))
             moveY--;
         move = new Vector2Int(moveX, moveY);
-        if(move != _prevMove) {
-            NetOutgoingMessage msg = connection.Peer.CreateMessage(1 + sizeof(int) * 2);
-            msg.Write((byte)CtsDataType.PlayerMove);
-            msg.Write(move);
-            connection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
-            _prevMove = move;
-        }
-
-        if(position == _prevPosition)
+        if(move == _prevMove)
             return;
-        Vector2Int delta = position - _prevPosition;
-        Vector2Int cameraPosition = level.LevelToCameraPosition(position);
-        if(Math.Abs(cameraPosition.x) > 5)
-            level.cameraPosition += new Vector2Int(delta.x, 0);
-        if(Math.Abs(cameraPosition.y) > 5)
-            level.cameraPosition += new Vector2Int(0, delta.y);
-        _prevPosition = position;
+        NetOutgoingMessage msg = connection.Peer.CreateMessage(1 + sizeof(int) * 2);
+        msg.Write((byte)CtsDataType.PlayerMove);
+        msg.Write(move);
+        connection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+        _prevMove = move;
     }
 
     // shtu up
@@ -192,9 +180,16 @@ public class PlayerObject : SyncedLevelObject, IAddable, IUpdatable, ITickable, 
         position += move;
     }
 
-    public void Moved() {
-        if(level.isClient)
+    public void Moved(Vector2Int from) {
+        if(level.isClient) {
+            Vector2Int delta = position - from;
+            Vector2Int cameraPosition = level.LevelToCameraPosition(position);
+            if(Math.Abs(cameraPosition.x) > 5)
+                level.cameraPosition += new Vector2Int(delta.x, 0);
+            if(Math.Abs(cameraPosition.y) > 5)
+                level.cameraPosition += new Vector2Int(0, delta.y);
             return;
+        }
         Vector2Int currentChunk = level.LevelToChunkPosition(position);
         for(int x = currentChunk.x - 5; x <= currentChunk.x + 5; x++)
             for(int y = currentChunk.y - 3; y <= currentChunk.y + 3; y++)
