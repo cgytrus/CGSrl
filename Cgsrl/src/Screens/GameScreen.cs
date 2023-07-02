@@ -512,14 +512,15 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     private void UpdateInteractablePrompt() {
         if(_interactableText is null || _level is null)
             return;
-        if(PlayerObject.currentInteractable is null) {
-            _interactableText.text = string.Empty;
-            _interactableText.position = new Vector2Int(-1, -1);
-        }
-        else {
-            _interactableText.text = string.Format(_interactableFormat, PlayerObject.currentInteractable.prompt);
-            _interactableText.position =
-                _level.LevelToScreenPosition(PlayerObject.currentInteractable.position + new Vector2Int(1, -1));
+        switch(PlayerObject.currentInteractable) {
+            case null:
+                _interactableText.text = string.Empty;
+                _interactableText.position = new Vector2Int(-1, -1);
+                break;
+            case SyncedLevelObject obj:
+                _interactableText.text = string.Format(_interactableFormat, PlayerObject.currentInteractable.prompt);
+                _interactableText.position = _level.LevelToScreenPosition(obj.position + new Vector2Int(1, -1));
+                break;
         }
     }
 

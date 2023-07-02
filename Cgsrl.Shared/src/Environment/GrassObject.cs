@@ -7,12 +7,12 @@ using PER.Util;
 
 namespace Cgsrl.Shared.Environment;
 
-public class GrassObject : InteractableObject {
-    public override string prompt => "touch";
+public class GrassObject : SyncedLevelObject, IInteractable {
+    public string prompt => "touch";
 
     protected override RenderCharacter character { get; } = new('"', Color.transparent, new Color(0f, 0.4f, 0f, 1f));
 
-    public override void Interact(PlayerObject player) {
+    public void Interact(PlayerObject player) {
         if(player.connection is null)
             return;
         NetOutgoingMessage msg = player.connection.Peer.CreateMessage();
