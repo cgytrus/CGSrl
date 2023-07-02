@@ -73,6 +73,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     private readonly IceObject _spawnerIce = new() { layer = -2 };
     private readonly MessageObject _spawnerMessage = new() { layer = 1 };
     private readonly GrassObject _spawnerGrass = new() { layer = -1 };
+    private readonly BombObject _spawnerBomb = new() { layer = 1 };
 
     private bool _prevEscapePressed;
     private bool _prevTPressed;
@@ -110,6 +111,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         AddElement<Button>("spawner.objects.ice");
         AddElement<Button>("spawner.objects.message");
         AddElement<Button>("spawner.objects.grass");
+        AddElement<Button>("spawner.objects.bomb");
         AddElement<InputField>("spawner.effect");
     }
 
@@ -154,6 +156,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         GetElement<Button>("spawner.objects.ice").onClick += (_, _) => _spawnerCurrent = _spawnerIce;
         GetElement<Button>("spawner.objects.message").onClick += (_, _) => _spawnerCurrent = _spawnerMessage;
         GetElement<Button>("spawner.objects.grass").onClick += (_, _) => _spawnerCurrent = _spawnerGrass;
+        GetElement<Button>("spawner.objects.bomb").onClick += (_, _) => _spawnerCurrent = _spawnerBomb;
 
         _level = new SyncedLevel(true, renderer, input, audio, _resources, new Vector2Int(16, 16));
         _level.objectAdded += obj => {

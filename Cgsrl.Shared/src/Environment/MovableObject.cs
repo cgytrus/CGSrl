@@ -21,7 +21,8 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
     }
 
     public void AddForce(Vector2 velocity) {
-        velocity *= GetCurrentFriction();
+        if(!canPush)
+            return;
         _velocity += velocity;
     }
 
@@ -38,7 +39,15 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
         _velocity += needVelocityToReach;
     }
 
+    private void CheckVelocityForNan() {
+        if(float.IsNaN(_velocity.X))
+            _velocity.X = 0f;
+        if(float.IsNaN(_velocity.Y))
+            _velocity.Y = 0f;
+    }
+
     private bool ProcessVelocity() {
+        CheckVelocityForNan();
         Vector2 velocity = new(Math.Clamp(_velocity.X, -1f, 1f), Math.Clamp(_velocity.Y, -1f, 1f));
         _subPos += velocity;
         Vector2Int move = new();
@@ -75,6 +84,7 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
     }
 
     private void ProcessFriction() {
+        CheckVelocityForNan();
         Vector2 friction = GetCurrentFriction();
         friction.X = Math.Clamp(friction.X, 0f, Math.Abs(_velocity.X)) * Math.Sign(_velocity.X);
         friction.Y = Math.Clamp(friction.Y, 0f, Math.Abs(_velocity.Y)) * Math.Sign(_velocity.Y);
@@ -92,7 +102,8 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
     private bool TryPush(Vector2 velocity, float otherMass) {
         if(!canPush)
             return false;
-        _velocity += velocity * otherMass / mass;
+        _velocity += new Vector2(Math.Clamp(velocity.X * otherMass / mass, -1f, 1f),
+            Math.Clamp(velocity.Y * otherMass / mass, -1f, 1f));
         return ProcessVelocity();
     }
 
