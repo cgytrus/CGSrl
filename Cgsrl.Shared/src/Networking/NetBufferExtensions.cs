@@ -1,4 +1,6 @@
-﻿using Lidgren.Network;
+﻿using System.Numerics;
+
+using Lidgren.Network;
 
 using PER.Util;
 
@@ -21,4 +23,10 @@ public static class NetBufferExtensions {
         buffer.Write(vec.y);
     }
     public static Vector2Int ReadVector2Int(this NetBuffer buffer) => new(buffer.ReadInt32(), buffer.ReadInt32());
+
+    public static void Write(this NetBuffer buffer, Vector2 vec) {
+        buffer.Write(vec.X);
+        buffer.Write(vec.Y);
+    }
+    public static Vector2 ReadVector2(this NetBuffer buffer) => new(buffer.ReadFloat(), buffer.ReadFloat());
 }

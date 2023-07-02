@@ -12,9 +12,12 @@ using PER.Util;
 
 namespace Cgsrl.Shared.Environment;
 
-public class PlayerObject : SyncedLevelObject, IAddable, IUpdatable, ITickable, IMovable {
+public class PlayerObject : MovableObject, IAddable, IUpdatable, IMovable {
     protected override RenderCharacter character => new('@',
         highlighted ? new Color(1f, 1f, 0f, 0.2f) : Color.transparent, new Color(0, 255, 255, 255));
+
+    protected override bool canPush => true;
+    protected override float mass => 1f;
 
     public NetConnection? connection { get; set; }
 
@@ -51,10 +54,6 @@ public class PlayerObject : SyncedLevelObject, IAddable, IUpdatable, ITickable, 
 
     private Vector2Int _prevMove;
     public Vector2Int move { get; set; }
-
-    private int _iceMoveTime;
-    private int _iceMoveSpeed;
-    private Vector2Int _lastNonZeroMove;
 
     // client-side only, have to do this cuz it's in the shared project and i don't wanna depend on PRR.UI here xd
     public object? text { get; set; }
@@ -108,76 +107,9 @@ public class PlayerObject : SyncedLevelObject, IAddable, IUpdatable, ITickable, 
         _prevMove = move;
     }
 
-    // shtu up
-    // ReSharper disable once CognitiveComplexity
-    public void Tick(TimeSpan time) {
-        int moveX = this.move.x;
-        int moveY = this.move.y;
-        bool iceSlowingDown = false;
-        if(moveX == 0 && moveY == 0) {
-            if(level.HasObjectAt<IceObject>(position)) {
-                moveX = _lastNonZeroMove.x;
-                moveY = _lastNonZeroMove.y;
-                iceSlowingDown = _iceMoveSpeed < 4;
-                if(!iceSlowingDown)
-                    return;
-            }
-            else {
-                _iceMoveTime = 0;
-                _iceMoveSpeed = 0;
-                return;
-            }
-        }
-        if(!iceSlowingDown)
-            _lastNonZeroMove = new Vector2Int(moveX, moveY);
-
-        bool isDiagonal = moveX != 0 && moveY != 0;
-        bool collidesHorizontal = moveX != 0 && level.HasObjectAt<WallObject>(position + new Vector2Int(moveX, 0));
-        bool collidesVertical = moveY != 0 && level.HasObjectAt<WallObject>(position + new Vector2Int(0, moveY));
-        bool collidesDiagonal = isDiagonal && level.HasObjectAt<WallObject>(position + new Vector2Int(moveX, moveY));
-
-        if(isDiagonal &&
-            (collidesHorizontal && collidesVertical || !collidesHorizontal && !collidesVertical && collidesDiagonal)) {
-            moveX = 0;
-            moveY = 0;
-        }
-        else if(!isDiagonal || collidesDiagonal) {
-            if(collidesHorizontal)
-                moveX = 0;
-            if(collidesVertical)
-                moveY = 0;
-        }
-
-        PushableObject? pushable;
-        Vector2Int move = new(moveX, moveY);
-        if(!level.HasObjectAt<IceObject>(position)) {
-            _iceMoveTime = 0;
-            _iceMoveSpeed = 0;
-            if(level.TryGetObjectAt(position + move, out pushable) && !pushable.TryMove(move))
-                return;
-            position += move;
-            _lastNonZeroMove = move;
-            return;
-        }
-        if(_iceMoveTime < _iceMoveSpeed) {
-            _iceMoveTime++;
-            return;
-        }
-        if(iceSlowingDown) {
-            if(_iceMoveSpeed < 4) {
-                _iceMoveSpeed++;
-                _iceMoveTime = 0;
-            }
-        }
-        else {
-            if(_iceMoveSpeed > 0) {
-                _iceMoveSpeed--;
-                _iceMoveTime = 0;
-            }
-        }
-        if(level.TryGetObjectAt(position + move, out pushable) && !pushable.TryMove(move))
-            return;
-        position += move;
+    public override void Tick(TimeSpan time) {
+        AddMovementForce(new Vector2(move.x, move.y));
+        base.Tick(time);
     }
 
     public void Moved(Vector2Int from) {
