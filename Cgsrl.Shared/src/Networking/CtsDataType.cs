@@ -1,3 +1,3 @@
 ﻿namespace Cgsrl.Shared.Networking;
 
-public enum CtsDataType : byte { AddObject, RemoveObject, PlayerMove, ChatMessage }
+public enum CtsDataType : byte { AddObject, RemoveObject, PlayerMove, PlayerInteract, ChatMessage }

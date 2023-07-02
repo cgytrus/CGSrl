@@ -225,6 +225,9 @@ public class GameServer {
             case CtsDataType.PlayerMove:
                 ProcessPlayerMove(msg);
                 break;
+            case CtsDataType.PlayerInteract:
+                ProcessPlayerInteract(msg);
+                break;
             case CtsDataType.ChatMessage:
                 ProcessChatMessage(msg);
                 break;
@@ -262,6 +265,23 @@ public class GameServer {
             return;
         }
         player.move = msg.ReadVector2Int();
+    }
+
+    private void ProcessPlayerInteract(NetIncomingMessage msg) {
+        if(msg.SenderConnection.Tag is not PlayerObject player) {
+            logger.Warn("Tag was not player, ignoring player interact!");
+            return;
+        }
+        Guid id = msg.ReadGuid();
+        if(!_level.objects.TryGetValue(id, out SyncedLevelObject? obj)) {
+            logger.Warn("Object {} doesn't exist, ignoring player interact!", id);
+            return;
+        }
+        if(obj is not InteractableObject interactable) {
+            logger.Warn("Object {} is not interactable, ignoring player interact!", id);
+            return;
+        }
+        interactable.Interact(player);
     }
 
     private void ProcessChatMessage(NetIncomingMessage msg) {

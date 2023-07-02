@@ -50,7 +50,7 @@ public class PlayerObject : MovableObject, IAddable, IUpdatable, IMovable {
 
     private const float MaxInteractionDistance = 3f;
     private bool _prevLeftPressed;
-    public static IInteractable? currentInteractable { get; private set; }
+    public static InteractableObject? currentInteractable { get; private set; }
 
     private Vector2Int _prevMove;
     public Vector2Int move { get; set; }
@@ -72,7 +72,7 @@ public class PlayerObject : MovableObject, IAddable, IUpdatable, IMovable {
         Vector2Int relativeMouse = mouse - position;
         float mouseDistSqr = new Vector2(relativeMouse.x, relativeMouse.y).LengthSquared();
         if(mouseDistSqr > MaxInteractionDistance * MaxInteractionDistance ||
-            !level.TryGetObjectAt(mouse, out IInteractable? obj)) {
+            !level.TryGetObjectAt(mouse, out InteractableObject? obj)) {
             currentInteractable = null;
             return;
         }
