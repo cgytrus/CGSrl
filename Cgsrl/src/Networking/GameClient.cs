@@ -185,6 +185,7 @@ public class GameClient {
             _messages.Insert(0, new ChatMessage(null, NetTime.Now, $"\f2{text}"));
         }
         _lastObjPosition = obj.position;
+        _level.CheckDirty(obj);
     }
 
     private void ProcessObjectRemoved(NetBuffer msg) {
@@ -203,6 +204,7 @@ public class GameClient {
             return;
         }
         obj.ReadDynamicDataFrom(msg);
+        _level.CheckDirty(obj);
     }
 
     private void ProcessChatMessage(NetIncomingMessage msg) {
