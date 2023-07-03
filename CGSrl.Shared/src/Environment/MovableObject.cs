@@ -33,8 +33,8 @@ public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
     protected void AddMovementForce(Vector2 velocity) {
         velocity *= GetCurrentFriction() * 2f;
         Vector2 newVelocity = new(
-            Math.Clamp(_velocity.X + velocity.X, -1f, 1f),
-            Math.Clamp(_velocity.Y + velocity.Y, -1f, 1f)
+            Math.Clamp(_velocity.X + velocity.X, -0.5f, 0.5f),
+            Math.Clamp(_velocity.Y + velocity.Y, -0.5f, 0.5f)
         );
         Vector2 needVelocityToReach = new(
             Math.Max(Math.Abs(newVelocity.X - _velocity.X), 0f) * Math.Sign(velocity.X),
@@ -95,15 +95,16 @@ public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
 
     private void ProcessFriction() {
         CheckVelocityForNan();
-        Vector2 friction = GetCurrentFriction();
-        friction.X = Math.Clamp(friction.X, 0f, Math.Abs(_velocity.X)) * Math.Sign(_velocity.X);
-        friction.Y = Math.Clamp(friction.Y, 0f, Math.Abs(_velocity.Y)) * Math.Sign(_velocity.Y);
-        _velocity -= friction;
 
         if(_velocity.X == 0f)
             _subPos.X = 0f;
         if(_velocity.Y == 0f)
             _subPos.Y = 0f;
+
+        Vector2 friction = GetCurrentFriction();
+        friction.X = Math.Clamp(friction.X, 0f, Math.Abs(_velocity.X)) * Math.Sign(_velocity.X);
+        friction.Y = Math.Clamp(friction.Y, 0f, Math.Abs(_velocity.Y)) * Math.Sign(_velocity.Y);
+        _velocity -= friction;
     }
 
     private Vector2 GetCurrentFriction() =>
