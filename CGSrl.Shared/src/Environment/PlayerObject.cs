@@ -12,7 +12,7 @@ using PER.Util;
 
 namespace CGSrl.Shared.Environment;
 
-public class PlayerObject : MovableObject, IAddable, IUpdatable, IMovable {
+public class PlayerObject : MovableObject, IUpdatable, IMovable {
     public override int layer => 0;
 
     protected override RenderCharacter character => new('@',
@@ -60,7 +60,7 @@ public class PlayerObject : MovableObject, IAddable, IUpdatable, IMovable {
     // client-side only, have to do this cuz it's in the shared project and i don't wanna depend on PRR.UI here xd
     public object? text { get; set; }
 
-    public void Added() => Moved(position);
+    public override void Added() => LoadChunks();
 
     public void Update(TimeSpan time) {
         if(connection is null)
@@ -112,22 +112,25 @@ public class PlayerObject : MovableObject, IAddable, IUpdatable, IMovable {
     public override void Tick(TimeSpan time) {
         AddMovementForce(new Vector2(move.x, move.y));
         base.Tick(time);
+        LoadChunks();
     }
 
-    public void Moved(Vector2Int from) {
-        if(level.isClient) {
-            Vector2Int delta = position - from;
-            Vector2Int cameraPosition = level.LevelToCameraPosition(position);
-            if(Math.Abs(cameraPosition.x) > 5)
-                level.cameraPosition += new Vector2Int(delta.x, 0);
-            if(Math.Abs(cameraPosition.y) > 5)
-                level.cameraPosition += new Vector2Int(0, delta.y);
-            return;
-        }
+    private void LoadChunks() {
         Vector2Int currentChunk = level.LevelToChunkPosition(position);
         for(int x = currentChunk.x - 5; x <= currentChunk.x + 5; x++)
             for(int y = currentChunk.y - 3; y <= currentChunk.y + 3; y++)
-                level.CreateChunkAt(new Vector2Int(x, y));
+                level.LoadChunkAt(new Vector2Int(x, y));
+    }
+
+    public void Moved(Vector2Int from) {
+        if(!level.isClient)
+            return;
+        Vector2Int delta = position - from;
+        Vector2Int cameraPosition = level.LevelToCameraPosition(position);
+        if(Math.Abs(cameraPosition.x) > 5)
+            level.cameraPosition += new Vector2Int(delta.x, 0);
+        if(Math.Abs(cameraPosition.y) > 5)
+            level.cameraPosition += new Vector2Int(0, delta.y);
     }
 
     protected override void WriteStaticDataTo(NetBuffer buffer) {

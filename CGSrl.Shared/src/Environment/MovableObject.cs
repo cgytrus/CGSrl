@@ -5,16 +5,19 @@ using CGSrl.Shared.Networking;
 using Lidgren.Network;
 
 using PER.Abstractions;
+using PER.Abstractions.Environment;
 using PER.Util;
 
 namespace CGSrl.Shared.Environment;
 
-public abstract class MovableObject : SyncedLevelObject, ITickable {
+public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
     protected abstract bool canPush { get; }
     protected abstract float mass { get; }
 
     private Vector2 _velocity;
     private Vector2 _subPos;
+
+    public virtual void Added() => level.LoadChunkAt(level.LevelToChunkPosition(position));
 
     public virtual void Tick(TimeSpan time) {
         bool pushable = true;
@@ -113,6 +116,10 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
         }
         _velocity += new Vector2(Math.Clamp(velocity.X * otherMass / mass, -1f, 1f),
             Math.Clamp(velocity.Y * otherMass / mass, -1f, 1f));
+        CheckVelocityForNan();
+        level.LoadChunkAt(level.LevelToChunkPosition(position));
+        level.LoadChunkAt(level.LevelToChunkPosition(new Vector2Int(position.x + Math.Sign(_velocity.X),
+            position.y + Math.Sign(_velocity.Y))));
         return ProcessVelocity(ref pushable);
     }
 
