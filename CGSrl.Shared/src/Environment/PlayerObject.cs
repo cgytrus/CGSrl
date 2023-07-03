@@ -13,6 +13,8 @@ using PER.Util;
 namespace CGSrl.Shared.Environment;
 
 public class PlayerObject : MovableObject, IAddable, IUpdatable, IMovable {
+    public override int layer => 0;
+
     protected override RenderCharacter character => new('@',
         highlighted ? new Color(1f, 1f, 0f, 0.2f) : Color.transparent, new Color(0, 255, 255, 255));
 

@@ -10,6 +10,7 @@ namespace CGSrl.Shared.Environment;
 public class EffectObject : SyncedLevelObject {
     public string effect { get; set; } = "none";
 
+    public override int layer => 10;
     protected override RenderCharacter character { get; } = new('a', Color.transparent, Color.white);
     public override void Draw() {
         renderer.AddEffect(level.LevelToScreenPosition(position),

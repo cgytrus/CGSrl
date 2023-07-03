@@ -11,6 +11,7 @@ public class BombObject : InteractableObject {
 
     public override string prompt => "detonate";
 
+    public override int layer => 1;
     protected override RenderCharacter character { get; } = new('O', Color.transparent, Color.white);
 
     protected override void OnInteract(PlayerObject player) {

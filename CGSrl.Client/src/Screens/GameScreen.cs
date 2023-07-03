@@ -65,15 +65,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     private Text? _infoText;
     private string _infoFormat = "{0} {1} {2}";
 
-    private SyncedLevelObject _spawnerCurrent;
-    private readonly FloorObject _spawnerFloor = new() { layer = -10 };
-    private readonly WallObject _spawnerWall = new() { layer = 2 };
-    private readonly BoxObject _spawnerBox = new() { layer = 1 };
-    private readonly EffectObject _spawnerEffect = new() { layer = 10 };
-    private readonly IceObject _spawnerIce = new() { layer = -2 };
-    private readonly MessageObject _spawnerMessage = new() { layer = 1 };
-    private readonly GrassObject _spawnerGrass = new() { layer = -1 };
-    private readonly BombObject _spawnerBomb = new() { layer = 1 };
+    private Type _spawnerCurrent;
 
     private bool _prevEscapePressed;
     private bool _prevTPressed;
@@ -87,7 +79,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         _resources = resources;
         resources.TryAddResource(PlayerListTemplate.GlobalId, new PlayerListTemplate());
         resources.TryAddResource(ChatMessageListTemplate.GlobalId, new ChatMessageListTemplate());
-        _spawnerCurrent = _spawnerWall;
+        _spawnerCurrent = typeof(WallObject);
     }
 
     public override void Preload() {
@@ -149,14 +141,14 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         _infoText = GetElement<Text>("info");
         _infoFormat = _infoText.text ?? _infoFormat;
 
-        GetElement<Button>("spawner.objects.floor").onClick += (_, _) => _spawnerCurrent = _spawnerFloor;
-        GetElement<Button>("spawner.objects.wall").onClick += (_, _) => _spawnerCurrent = _spawnerWall;
-        GetElement<Button>("spawner.objects.box").onClick += (_, _) => _spawnerCurrent = _spawnerBox;
-        GetElement<Button>("spawner.objects.effect").onClick += (_, _) => _spawnerCurrent = _spawnerEffect;
-        GetElement<Button>("spawner.objects.ice").onClick += (_, _) => _spawnerCurrent = _spawnerIce;
-        GetElement<Button>("spawner.objects.message").onClick += (_, _) => _spawnerCurrent = _spawnerMessage;
-        GetElement<Button>("spawner.objects.grass").onClick += (_, _) => _spawnerCurrent = _spawnerGrass;
-        GetElement<Button>("spawner.objects.bomb").onClick += (_, _) => _spawnerCurrent = _spawnerBomb;
+        GetElement<Button>("spawner.objects.floor").onClick += (_, _) => _spawnerCurrent = typeof(FloorObject);
+        GetElement<Button>("spawner.objects.wall").onClick += (_, _) => _spawnerCurrent = typeof(WallObject);
+        GetElement<Button>("spawner.objects.box").onClick += (_, _) => _spawnerCurrent = typeof(BoxObject);
+        GetElement<Button>("spawner.objects.effect").onClick += (_, _) => _spawnerCurrent = typeof(EffectObject);
+        GetElement<Button>("spawner.objects.ice").onClick += (_, _) => _spawnerCurrent = typeof(IceObject);
+        GetElement<Button>("spawner.objects.message").onClick += (_, _) => _spawnerCurrent = typeof(MessageObject);
+        GetElement<Button>("spawner.objects.grass").onClick += (_, _) => _spawnerCurrent = typeof(GrassObject);
+        GetElement<Button>("spawner.objects.bomb").onClick += (_, _) => _spawnerCurrent = typeof(BombObject);
 
         _level = new SyncedLevel(true, renderer, input, audio, _resources, new Vector2Int(16, 16));
         _level.objectAdded += obj => {
@@ -414,7 +406,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         bool rightPressed = input.MouseButtonPressed(MouseButton.Right);
 
         if(!_prevLeftPressed && leftPressed &&
-            !_level.HasObjectAt(_level.ScreenToLevelPosition(input.mousePosition), _spawnerCurrent.GetType()))
+            !_level.HasObjectAt(_level.ScreenToLevelPosition(input.mousePosition), _spawnerCurrent))
             CreateCurrentSpawnerObject();
         if(!_prevRightPressed && rightPressed)
             RemoveCurrentObject();
@@ -427,16 +419,18 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         if(_level is null || _client is null)
             return;
 
-        _spawnerCurrent.id = Guid.NewGuid();
-        _spawnerCurrent.position = _level.ScreenToLevelPosition(input.mousePosition);
+        if(Activator.CreateInstance(_spawnerCurrent) is not SyncedLevelObject newObj)
+            return;
 
-        if(_spawnerCurrent is EffectObject effectObject) {
+        newObj.position = _level.ScreenToLevelPosition(input.mousePosition);
+
+        if(newObj is EffectObject effectObject) {
             effectObject.effect = GetElement<InputField>("spawner.effect").value ?? "none";
         }
 
         NetOutgoingMessage msg = _client.peer.CreateMessage(SyncedLevelObject.PreallocSize);
         msg.Write((byte)CtsDataType.AddObject);
-        _spawnerCurrent.WriteTo(msg);
+        newObj.WriteTo(msg);
         _client.peer.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
     }
 

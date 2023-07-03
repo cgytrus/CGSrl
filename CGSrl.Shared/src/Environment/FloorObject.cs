@@ -16,6 +16,7 @@ public class FloorObject : SyncedLevelObject, IAddable {
         noise.SetFrequency(0.1f);
     }
 
+    public override int layer => -10;
     protected override RenderCharacter character => _character;
     private RenderCharacter _character;
 

@@ -10,6 +10,7 @@ namespace CGSrl.Shared.Environment;
 public class MessageObject : InteractableObject {
     public override string prompt => "send";
 
+    public override int layer => 1;
     protected override RenderCharacter character { get; } = new('!', Color.transparent, Color.white);
 
     protected override void OnInteract(PlayerObject player) {

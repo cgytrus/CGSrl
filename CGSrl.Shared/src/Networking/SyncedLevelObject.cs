@@ -25,22 +25,17 @@ public abstract class SyncedLevelObject : LevelObject<SyncedLevel, SyncedChunk, 
             BombObject => (int)ObjectType.Bomb,
             _ => int.MaxValue
         });
+        buffer.Write(id);
         WriteStaticDataTo(buffer);
         WriteDynamicDataTo(buffer);
     }
 
-    protected virtual void WriteStaticDataTo(NetBuffer buffer) {
-        buffer.Write(id);
-        buffer.Write(layer);
-    }
+    protected virtual void WriteStaticDataTo(NetBuffer buffer) { }
     public virtual void WriteDynamicDataTo(NetBuffer buffer) {
         buffer.Write(position);
     }
 
-    protected virtual void ReadStaticDataFrom(NetBuffer buffer) {
-        id = buffer.ReadGuid();
-        layer = buffer.ReadInt32();
-    }
+    protected virtual void ReadStaticDataFrom(NetBuffer buffer) { }
     public virtual void ReadDynamicDataFrom(NetBuffer buffer) {
         position = buffer.ReadVector2Int();
     }
@@ -48,24 +43,25 @@ public abstract class SyncedLevelObject : LevelObject<SyncedLevel, SyncedChunk, 
     public static SyncedLevelObject Read(NetBuffer buffer) {
         try {
             int type = buffer.ReadInt32();
+            Guid id = buffer.ReadGuid();
             SyncedLevelObject obj = type switch {
-                (int)ObjectType.Player => new PlayerObject(),
-                (int)ObjectType.Floor => new FloorObject(),
-                (int)ObjectType.Wall => new WallObject(),
-                (int)ObjectType.Box => new BoxObject(),
-                (int)ObjectType.Effect => new EffectObject(),
-                (int)ObjectType.Ice => new IceObject(),
-                (int)ObjectType.Message => new MessageObject(),
-                (int)ObjectType.Grass => new GrassObject(),
-                (int)ObjectType.Bomb => new BombObject(),
-                _ => new CorruptedObject()
+                (int)ObjectType.Player => new PlayerObject { id = id },
+                (int)ObjectType.Floor => new FloorObject { id = id },
+                (int)ObjectType.Wall => new WallObject { id = id },
+                (int)ObjectType.Box => new BoxObject { id = id },
+                (int)ObjectType.Effect => new EffectObject { id = id },
+                (int)ObjectType.Ice => new IceObject { id = id },
+                (int)ObjectType.Message => new MessageObject { id = id },
+                (int)ObjectType.Grass => new GrassObject { id = id },
+                (int)ObjectType.Bomb => new BombObject { id = id },
+                _ => new CorruptedObject { id = id }
             };
             obj.ReadStaticDataFrom(buffer);
             obj.ReadDynamicDataFrom(buffer);
             return obj;
         }
         catch {
-            return new CorruptedObject { layer = int.MaxValue };
+            return new CorruptedObject();
         }
     }
 }

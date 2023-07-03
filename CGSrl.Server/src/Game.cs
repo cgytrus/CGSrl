@@ -45,7 +45,7 @@ public class Game : IGame, ISetupable, ITickable {
             return;
         for(int x = 0; x < size.x; x++)
             for(int y = 0; y < size.y; y++)
-                _level.Add(new IceObject { layer = -2, position = start + new Vector2Int(x, y) });
+                _level.Add(new IceObject { position = start + new Vector2Int(x, y) });
     }
 
     public void Tick(TimeSpan time) {
@@ -66,40 +66,38 @@ public class Game : IGame, ISetupable, ITickable {
 
         //for(int y = -20; y <= 20; y++) {
         //    for(int x = -20; x <= 20; x++) {
-        //        _level.Add(new IceObject { layer = -2, position = new Vector2Int(x, y + 41) });
-        //        _level.Add(new GrassObject { layer = -1, position = new Vector2Int(x, y + 41 + 41) });
+        //        _level.Add(new IceObject { position = new Vector2Int(x, y + 41) });
+        //        _level.Add(new GrassObject { position = new Vector2Int(x, y + 41 + 41) });
         //    }
         //}
 
-        _level.Add(new BoxObject { layer = 1, position = new Vector2Int(2, 0) });
-        _level.Add(new BoxObject { layer = 1, position = new Vector2Int(2, 1) });
-        _level.Add(new BoxObject { layer = 1, position = new Vector2Int(2, 3) });
-        _level.Add(new MessageObject { layer = 1, position = new Vector2Int(1, 5) });
+        _level.Add(new BoxObject { position = new Vector2Int(2, 0) });
+        _level.Add(new BoxObject { position = new Vector2Int(2, 1) });
+        _level.Add(new BoxObject { position = new Vector2Int(2, 3) });
+        _level.Add(new MessageObject { position = new Vector2Int(1, 5) });
 
         for(int i = -5; i <= 5; i++)
-            _level.Add(new WallObject { layer = 2, position = new Vector2Int(i, -5) });
+            _level.Add(new WallObject { position = new Vector2Int(i, -5) });
         for(int i = 0; i < 100; i++)
-            _level.Add(new WallObject { layer = 2, position = new Vector2Int(i, -8) });
+            _level.Add(new WallObject { position = new Vector2Int(i, -8) });
         for(int i = 0; i < 30; i++)
-            _level.Add(new WallObject { layer = 2, position = new Vector2Int(8, i - 7) });
+            _level.Add(new WallObject { position = new Vector2Int(8, i - 7) });
 
         for(int y = 0; y < 10; y++)
             for(int x = 0; x < 10; x++)
                 _level.Add(new EffectObject {
-                    layer = 10,
                     position = new Vector2Int(3, -10) + new Vector2Int(x, y),
                     effect = "glitch"
                 });
         for(int y = 0; y < 6; y++)
             for(int x = 0; x < 9; x++)
                 _level.Add(new EffectObject {
-                    layer = 10,
                     position = new Vector2Int(-12, -24) + new Vector2Int(x, y),
                     effect = "glitch"
                 });
 
         for(int i = 0; i < 1000; i++)
-            _level.Add(new BoxObject { layer = 1, position = new Vector2Int(-i - 20, 0) });
+            _level.Add(new BoxObject { position = new Vector2Int(-i - 20, 0) });
     }
 
     private void LoadLevel() {

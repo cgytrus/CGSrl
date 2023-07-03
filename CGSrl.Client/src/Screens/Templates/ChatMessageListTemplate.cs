@@ -50,7 +50,7 @@ public class ChatMessageListTemplate : ListBoxTemplateResource<ChatMessage> {
 
         public override void MoveTo(Vector2Int origin, int index, Vector2Int size) {
             int yOffset = size.y - 1 - height * index;
-            foreach((string? id, Element? element) in idElements)
+            foreach((string? id, PER.Abstractions.UI.Element? element) in idElements)
                 element.position = origin + offsets[id] + new Vector2Int(0, yOffset);
         }
     }
