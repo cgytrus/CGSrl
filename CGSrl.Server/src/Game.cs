@@ -45,7 +45,7 @@ public class Game : IGame, ISetupable, ITickable {
             return;
         for(int x = 0; x < size.x; x++)
             for(int y = 0; y < size.y; y++)
-                _level.Add(new IceObject { position = start + new Vector2Int(x, y) });
+                _level.Add(new FloorObject { position = start + new Vector2Int(x, y) });
     }
 
     public void Tick(TimeSpan time) {
@@ -64,12 +64,12 @@ public class Game : IGame, ISetupable, ITickable {
         if(_level is null)
             return;
 
-        //for(int y = -20; y <= 20; y++) {
-        //    for(int x = -20; x <= 20; x++) {
-        //        _level.Add(new IceObject { position = new Vector2Int(x, y + 41) });
-        //        _level.Add(new GrassObject { position = new Vector2Int(x, y + 41 + 41) });
-        //    }
-        //}
+        for(int y = -20; y <= 20; y++) {
+            for(int x = -20; x <= 20; x++) {
+                _level.Add(new IceObject { position = new Vector2Int(x, y + 41) });
+                _level.Add(new GrassObject { position = new Vector2Int(x, y + 41 + 41) });
+            }
+        }
 
         _level.Add(new BoxObject { position = new Vector2Int(2, 0) });
         _level.Add(new BoxObject { position = new Vector2Int(2, 1) });
