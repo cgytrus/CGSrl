@@ -17,7 +17,8 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
     private Vector2 _subPos;
 
     public virtual void Tick(TimeSpan time) {
-        ProcessVelocity();
+        bool pushable = true;
+        ProcessVelocity(ref pushable);
     }
 
     public void AddForce(Vector2 velocity) {
@@ -46,7 +47,7 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
             _velocity.Y = 0f;
     }
 
-    private bool ProcessVelocity() {
+    private bool ProcessVelocity(ref bool pushable) {
         CheckVelocityForNan();
         Vector2 velocity = new(Math.Clamp(_velocity.X, -1f, 1f), Math.Clamp(_velocity.Y, -1f, 1f));
         _subPos += velocity;
@@ -76,9 +77,15 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
             ProcessFriction();
             return false;
         }
-        bool moved = TryMove(move);
+        bool moved = TryMove(move, ref pushable);
         if(moved)
             _subPos -= new Vector2(move.x, move.y);
+        else if(!pushable) {
+            if(move.x != 0)
+                _velocity.X = 0f;
+            if(move.y != 0)
+                _velocity.Y = 0f;
+        }
         ProcessFriction();
         return moved;
     }
@@ -99,24 +106,29 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
     private Vector2 GetCurrentFriction() =>
         level.HasObjectAt<IceObject>(position) ? new Vector2(1f / 10f, 1f / 10f) : new Vector2(1f, 1f);
 
-    private bool TryPush(Vector2 velocity, float otherMass) {
-        if(!canPush)
+    private bool TryPush(Vector2 velocity, float otherMass, ref bool pushable) {
+        if(!canPush) {
+            pushable = false;
             return false;
+        }
         _velocity += new Vector2(Math.Clamp(velocity.X * otherMass / mass, -1f, 1f),
             Math.Clamp(velocity.Y * otherMass / mass, -1f, 1f));
-        return ProcessVelocity();
+        return ProcessVelocity(ref pushable);
     }
 
-    private bool TryMove(Vector2Int delta) {
+    private bool TryMove(Vector2Int delta, ref bool pushable) {
         if(delta.x != 0 && delta.y != 0)
-            return Random.Shared.Next(0, 2) == 0 ? TryMoveDiagHorFirst(delta) : TryMoveDiagVerFirst(delta);
-        if(level.TryGetObjectAt(position + delta, out MovableObject? next) && !next.TryPush(_velocity, mass))
+            return Random.Shared.Next(0, 2) == 0 ?
+                TryMoveDiagHorFirst(delta, ref pushable) :
+                TryMoveDiagVerFirst(delta, ref pushable);
+        if(level.TryGetObjectAt(position + delta, out MovableObject? next) &&
+            !next.TryPush(_velocity, mass, ref pushable))
             return false;
         position += delta;
         return true;
     }
 
-    private bool TryMoveDiagHorFirst(Vector2Int delta) {
+    private bool TryMoveDiagHorFirst(Vector2Int delta, ref bool pushable) {
         Vector2Int position = this.position;
         Vector2Int hor = new(delta.x, 0);
         Vector2Int ver = new(0, delta.y);
@@ -124,19 +136,22 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
         Vector2 verV = _velocity with { X = 0 };
         bool moved = false;
 
-        if(!level.TryGetObjectAt(position + hor, out MovableObject? nextHor) || nextHor.TryPush(horV, mass)) {
+        if(!level.TryGetObjectAt(position + hor, out MovableObject? nextHor) ||
+            nextHor.TryPush(horV, mass, ref pushable)) {
             moved = true;
             this.position += hor;
         }
 
-        bool diag = !moved || !level.TryGetObjectAt(position + delta, out MovableObject? next) || next.TryPush(_velocity, mass);
-        if(!diag || level.TryGetObjectAt(position + ver, out MovableObject? nextVer) && !nextVer.TryPush(verV, mass))
+        bool diag = !moved || !level.TryGetObjectAt(position + delta, out MovableObject? next) ||
+            next.TryPush(_velocity, mass, ref pushable);
+        if(!diag || level.TryGetObjectAt(position + ver, out MovableObject? nextVer) &&
+            !nextVer.TryPush(verV, mass, ref pushable))
             return moved;
         this.position += ver;
         return true;
     }
 
-    private bool TryMoveDiagVerFirst(Vector2Int delta) {
+    private bool TryMoveDiagVerFirst(Vector2Int delta, ref bool pushable) {
         Vector2Int position = this.position;
         Vector2Int hor = new(delta.x, 0);
         Vector2Int ver = new(0, delta.y);
@@ -144,13 +159,16 @@ public abstract class MovableObject : SyncedLevelObject, ITickable {
         Vector2 verV = _velocity with { X = 0 };
         bool moved = false;
 
-        if(!level.TryGetObjectAt(position + ver, out MovableObject? nextVer) || nextVer.TryPush(verV, mass)) {
+        if(!level.TryGetObjectAt(position + ver, out MovableObject? nextVer) ||
+            nextVer.TryPush(verV, mass, ref pushable)) {
             moved = true;
             this.position += ver;
         }
 
-        bool diag = !moved || !level.TryGetObjectAt(position + delta, out MovableObject? next) || next.TryPush(_velocity, mass);
-        if(!diag || level.TryGetObjectAt(position + hor, out MovableObject? nextHor) && !nextHor.TryPush(horV, mass))
+        bool diag = !moved || !level.TryGetObjectAt(position + delta, out MovableObject? next) ||
+            next.TryPush(_velocity, mass, ref pushable);
+        if(!diag || level.TryGetObjectAt(position + hor, out MovableObject? nextHor) &&
+            !nextHor.TryPush(horV, mass, ref pushable))
             return moved;
         this.position += hor;
         return true;
