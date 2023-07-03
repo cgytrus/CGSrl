@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\CGSrl.Shared\CGSrl.Shared.csproj" />
+      <ProjectReference Include="..\PER\PER.Common\PER.Common.csproj" />
+      <ProjectReference Include="..\PER\PER\PER.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="NLog.config;resources\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="NBrigadier" Version="1.0.17.5" />
+    </ItemGroup>
+
+</Project>

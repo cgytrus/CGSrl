@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cgsrl", "Cgsrl\Cgsrl.csproj", "{61986505-CEFF-4877-BB1C-CA13729BA1C6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CGSrl.Client", "CGSrl.Client\CGSrl.Client.csproj", "{61986505-CEFF-4877-BB1C-CA13729BA1C6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PER", "PER\PER\PER.csproj", "{5BBD03D3-31CF-41A4-B0BB-33CE45D16A9C}"
 EndProject
@@ -25,9 +25,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Folder", "Solution
 		LICENSE.md = LICENSE.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cgsrl.Server", "Cgsrl.Server\Cgsrl.Server.csproj", "{32E10F59-1479-449C-8172-CAC92CB395DB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CGSrl.Server", "CGSrl.Server\CGSrl.Server.csproj", "{32E10F59-1479-449C-8172-CAC92CB395DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cgsrl.Shared", "Cgsrl.Shared\Cgsrl.Shared.csproj", "{E82E2F15-BC2A-4382-BA87-67A40E197E54}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CGSrl.Shared", "CGSrl.Shared\CGSrl.Shared.csproj", "{E82E2F15-BC2A-4382-BA87-67A40E197E54}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
