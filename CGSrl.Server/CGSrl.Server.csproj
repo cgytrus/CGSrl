@@ -14,10 +14,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="NLog.config;resources\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
+        <Content Include="NLog.config;wfc.bin;resources\**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="DeBroglie" Version="2.0.0" />
       <PackageReference Include="NBrigadier" Version="1.0.17.5" />
     </ItemGroup>
 

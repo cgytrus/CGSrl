@@ -70,10 +70,17 @@ public class Commands {
             .Executes(context => {
                 if(!CheckServerPlayer(context))
                     return 1;
-                if(Core.engine.game is Game game)
-                    game.SaveLevel();
+                Game.SaveLevel(_level, "level.bin");
                 return 1;
             })), "Saves the level.");
+
+        _descriptions.Add(dispatcher.Register(LiteralArgumentBuilder<PlayerObject?>.Literal("wfcSave")
+            .Executes(context => {
+                if(!CheckServerPlayer(context))
+                    return 1;
+                Game.SaveLevel(_level, "wfc.bin");
+                return 1;
+            })), "Saves the level for use with the Wave Function Collapse algorithm.");
 
         _descriptions.Add(dispatcher.Register(LiteralArgumentBuilder<PlayerObject?>.Literal("players")
             .Then(RequiredArgumentBuilder<PlayerObject?, bool>.Argument("printIp", BoolArgumentType.Bool())
