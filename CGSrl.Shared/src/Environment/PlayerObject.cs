@@ -25,8 +25,8 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     // you fucking retarded bitch
 #pragma warning disable CA1822
     public float brightness => connection is null ? 0f : 1f;
-    public byte emission => connection is null ? (byte)0 : (byte)12;
-    public byte visibility => connection is null ? (byte)0 : (byte)14;
+    public byte emission => connection is null ? (byte)0 : (byte)16;
+    public byte visibility => connection is null ? (byte)0 : (byte)16;
 #pragma warning restore CA1822
 
     public NetConnection? connection { get; set; }
