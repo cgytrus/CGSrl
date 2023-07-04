@@ -1,11 +1,12 @@
 ﻿using System.Numerics;
 
+using PER.Abstractions;
 using PER.Abstractions.Rendering;
 using PER.Util;
 
 namespace CGSrl.Shared.Environment;
 
-public class BombObject : InteractableObject {
+public class BombObject : InteractableObject, ITickable {
     private const float Range = 10f;
     private const float Force = 10f;
 
@@ -14,7 +15,17 @@ public class BombObject : InteractableObject {
     public override int layer => 1;
     protected override RenderCharacter character { get; } = new('O', Color.transparent, Color.white);
 
-    protected override void OnInteract(PlayerObject player) {
+    private int _explodeInTicks;
+
+    public void Tick(TimeSpan time) {
+        _explodeInTicks--;
+        if(_explodeInTicks == 0)
+            Explode();
+    }
+
+    protected override void OnInteract(PlayerObject player) => Explode();
+
+    private void Explode() {
         int range = (int)MathF.Ceiling(Range);
         for(int y = -range; y <= range; y++) {
             for(int x = -range; x <= range; x++) {
@@ -35,5 +46,8 @@ public class BombObject : InteractableObject {
             return;
         foreach(MovableObject movable in level.GetObjectsAt<MovableObject>(pos))
             movable.AddForce(dir / dist * (1f - (dist - 1f) / Range) * Force);
+        foreach(BombObject bomb in level.GetObjectsAt<BombObject>(pos))
+            if(bomb._explodeInTicks < 0)
+                bomb._explodeInTicks = 2;
     }
 }
