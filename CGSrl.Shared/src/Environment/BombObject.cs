@@ -21,14 +21,12 @@ public class BombObject : InteractableObject {
                 if(x == 0 && y == 0)
                     continue;
                 Vector2Int pos = position + new Vector2Int(x, y);
-                if(!level.TryGetObjectAt(pos, out MovableObject? movable))
-                    continue;
                 Vector2 dir = new(x, y);
                 float dist = dir.Length();
                 if(dist > Range)
                     continue;
-                float force = (1f - (dist - 1f) / Range) * Force;
-                movable.AddForce(dir / dist * force);
+                foreach(MovableObject movable in level.GetObjectsAt<MovableObject>(pos))
+                    movable.AddForce(dir / dist * (1f - (dist - 1f) / Range) * Force);
             }
         }
     }
