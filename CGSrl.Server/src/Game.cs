@@ -45,10 +45,7 @@ public class Game : IGame, ISetupable, ITickable {
             LoadLevel(_level, "level.bin");
             _level.chunkCreated += GenerateChunk;
         }
-        else {
-            _level.chunkCreated += GenerateChunk;
-            //CreateTestLevel();
-        }
+        _level.chunkCreated += GenerateChunk;
 
         _server = new GameServer(_level, 12420);
     }
@@ -61,20 +58,24 @@ public class Game : IGame, ISetupable, ITickable {
             logger.Warn("Undecided, generating without neighbors");
             res = RunWfc(start, size, false);
         }
-        if(res != Resolution.Decided) {
-            logger.Error("Failed to generate chunk, filling with floor");
-            FillWithFloor(start, size);
-            return;
-        }
-        FillWithResult(start, size);
+        FillWithFloor(start, size);
+        if(res == Resolution.Decided)
+            FillWithResult(start, size);
+        else
+            logger.Error("Failed to generate chunk");
     }
 
     private Resolution RunWfc(Vector2Int start, Vector2Int size, bool useNeighbors) {
         if(_level is null || _wfcPropagator is null)
             return Resolution.Undecided;
         _wfcPropagator.Clear();
-        if(!useNeighbors)
-            return _wfcPropagator.Run();
+        if(useNeighbors)
+            WfcSelectContext(start, size);
+        return _wfcPropagator.Run();
+    }
+    private void WfcSelectContext(Vector2Int start, Vector2Int size) {
+        if(_level is null || _wfcPropagator is null)
+            return;
         for(int y = -WfcExtra; y < size.y + WfcExtra; y++) {
             for(int x = -WfcExtra; x < size.x + WfcExtra; x++) {
                 if(x >= 0 && y >= 0 && x < size.x && y < size.y ||
@@ -83,7 +84,6 @@ public class Game : IGame, ISetupable, ITickable {
                 _wfcPropagator.Select(WfcExtra + x, WfcExtra + y, 0, new Tile(obj.GetType()));
             }
         }
-        return _wfcPropagator.Run();
     }
 
     private void FillWithFloor(Vector2Int start, Vector2Int size) {
@@ -96,13 +96,12 @@ public class Game : IGame, ISetupable, ITickable {
     private void FillWithResult(Vector2Int start, Vector2Int size) {
         if(_level is null || _wfcPropagator is null)
             return;
-        ITopoArray<Type> tiles = _wfcPropagator.ToValueArray<Type>();
+        ITopoArray<Type?> tiles = _wfcPropagator.ToValueArray<Type?>();
         for(int y = 0; y < size.y; y++) {
             for(int x = 0; x < size.x; x++) {
                 Vector2Int position = new(start.x + x, start.y + y);
-                if(_level.HasObjectAt<FloorObject>(position) || _level.HasObjectAt<WallObject>(position))
-                    continue;
-                if(Activator.CreateInstance(tiles.Get(WfcExtra + x, WfcExtra + y)) is not SyncedLevelObject obj)
+                Type? type = tiles.Get(WfcExtra + x, WfcExtra + y);
+                if(type is null || Activator.CreateInstance(type) is not SyncedLevelObject obj)
                     continue;
                 obj.position = position;
                 _level.Add(obj);
@@ -131,48 +130,8 @@ public class Game : IGame, ISetupable, ITickable {
                 if(level.TryGetObjectAt(new Vector2Int(bounds.min.x + x, bounds.min.y + y), out SyncedLevelObject? obj))
                     grid[y, x] = new Tile(obj.GetType());
                 else
-                    grid[y, x] = new Tile(typeof(FloorObject));
+                    grid[y, x] = new Tile(null);
         return TopoArray.Create(grid, false);
-    }
-
-    private void CreateTestLevel() {
-        if(_level is null)
-            return;
-
-        for(int y = -20; y <= 20; y++) {
-            for(int x = -20; x <= 20; x++) {
-                _level.Add(new IceObject { position = new Vector2Int(x, y + 41) });
-                _level.Add(new GrassObject { position = new Vector2Int(x, y + 41 + 41) });
-            }
-        }
-
-        _level.Add(new BoxObject { position = new Vector2Int(2, 0) });
-        _level.Add(new BoxObject { position = new Vector2Int(2, 1) });
-        _level.Add(new BoxObject { position = new Vector2Int(2, 3) });
-        _level.Add(new MessageObject { position = new Vector2Int(1, 5) });
-
-        for(int i = -5; i <= 5; i++)
-            _level.Add(new WallObject { position = new Vector2Int(i, -5) });
-        for(int i = 0; i < 100; i++)
-            _level.Add(new WallObject { position = new Vector2Int(i, -8) });
-        for(int i = 0; i < 30; i++)
-            _level.Add(new WallObject { position = new Vector2Int(8, i - 7) });
-
-        for(int y = 0; y < 10; y++)
-            for(int x = 0; x < 10; x++)
-                _level.Add(new EffectObject {
-                    position = new Vector2Int(3, -10) + new Vector2Int(x, y),
-                    effect = "glitch"
-                });
-        for(int y = 0; y < 6; y++)
-            for(int x = 0; x < 9; x++)
-                _level.Add(new EffectObject {
-                    position = new Vector2Int(-12, -24) + new Vector2Int(x, y),
-                    effect = "glitch"
-                });
-
-        for(int i = 0; i < 1000; i++)
-            _level.Add(new BoxObject { position = new Vector2Int(-i - 20, 0) });
     }
 
     private static void LoadLevel(SyncedLevel level, string path) {

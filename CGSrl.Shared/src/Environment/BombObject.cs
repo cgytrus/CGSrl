@@ -25,9 +25,12 @@ public class BombObject : InteractableObject {
                 float dist = dir.Length();
                 if(dist > Range)
                     continue;
-                foreach(MovableObject movable in level.GetObjectsAt<MovableObject>(pos))
-                    movable.AddForce(dir / dist * (1f - (dist - 1f) / Range) * Force);
+                ApplyForceAt(pos, dir, dist);
             }
         }
+    }
+    private void ApplyForceAt(Vector2Int pos, Vector2 dir, float dist) {
+        foreach(MovableObject movable in level.GetObjectsAt<MovableObject>(pos))
+            movable.AddForce(dir / dist * (1f - (dist - 1f) / Range) * Force);
     }
 }
