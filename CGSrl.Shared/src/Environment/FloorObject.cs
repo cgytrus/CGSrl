@@ -17,8 +17,9 @@ public class FloorObject : SyncedLevelObject, IAddable {
     }
 
     public override int layer => -10;
-    protected override RenderCharacter character => _character;
+    public override RenderCharacter character => _character;
     private RenderCharacter _character;
+    public override bool blocksLight => false;
 
     public void Added() {
         if(!level.isClient)

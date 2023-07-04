@@ -62,35 +62,24 @@
         "size": { "x": 27, "y": 1 },
         "text": "Box (&)"
     },
-    "spawner.objects.effect": {
-        "position": { "x": 101, "y": 3 },
-        "size": { "x": 27, "y": 1 },
-        "text": "Effect (none, glitch)"
-    },
     "spawner.objects.ice": {
-        "position": { "x": 101, "y": 4 },
+        "position": { "x": 101, "y": 3 },
         "size": { "x": 27, "y": 1 },
         "text": "Ice (~)"
     },
     "spawner.objects.message": {
-        "position": { "x": 101, "y": 5 },
+        "position": { "x": 101, "y": 4 },
         "size": { "x": 27, "y": 1 },
         "text": "Message (!)"
     },
     "spawner.objects.grass": {
-        "position": { "x": 101, "y": 6 },
+        "position": { "x": 101, "y": 5 },
         "size": { "x": 27, "y": 1 },
         "text": "Grass (\")"
     },
     "spawner.objects.bomb": {
-        "position": { "x": 101, "y": 7 },
+        "position": { "x": 101, "y": 6 },
         "size": { "x": 27, "y": 1 },
         "text": "Bomb (O)"
-    },
-    "spawner.effect": {
-        "position": { "x": 101, "y": 9 },
-        "size": { "x": 27, "y": 1 },
-        "placeholder": "effect...",
-        "value": "glitch"
     }
 }

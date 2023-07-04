@@ -12,15 +12,22 @@ using PER.Util;
 
 namespace CGSrl.Shared.Environment;
 
-public class PlayerObject : MovableObject, IUpdatable, IMovable {
+public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     public override int layer => 0;
-
-    protected override RenderCharacter character => new('@',
+    public override RenderCharacter character => new('@',
         highlighted ? new Color(1f, 1f, 0f, 0.2f) : Color.transparent, new Color(0, 255, 255, 255));
+    public override bool blocksLight => false;
 
     protected override bool canPush => true;
     protected override float mass => 2f;
     protected override float strength => float.PositiveInfinity;
+
+    // you fucking retarded bitch
+#pragma warning disable CA1822
+    public float brightness => connection is null ? 0f : 1f;
+    public byte emission => connection is null ? (byte)0 : (byte)12;
+    public byte visibility => connection is null ? (byte)0 : (byte)14;
+#pragma warning restore CA1822
 
     public NetConnection? connection { get; set; }
 

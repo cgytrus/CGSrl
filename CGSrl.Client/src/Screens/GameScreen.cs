@@ -99,12 +99,10 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         AddElement<Button>("spawner.objects.floor");
         AddElement<Button>("spawner.objects.wall");
         AddElement<Button>("spawner.objects.box");
-        AddElement<Button>("spawner.objects.effect");
         AddElement<Button>("spawner.objects.ice");
         AddElement<Button>("spawner.objects.message");
         AddElement<Button>("spawner.objects.grass");
         AddElement<Button>("spawner.objects.bomb");
-        AddElement<InputField>("spawner.effect");
     }
 
     public override void Load(string id) {
@@ -144,7 +142,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         GetElement<Button>("spawner.objects.floor").onClick += (_, _) => _spawnerCurrent = typeof(FloorObject);
         GetElement<Button>("spawner.objects.wall").onClick += (_, _) => _spawnerCurrent = typeof(WallObject);
         GetElement<Button>("spawner.objects.box").onClick += (_, _) => _spawnerCurrent = typeof(BoxObject);
-        GetElement<Button>("spawner.objects.effect").onClick += (_, _) => _spawnerCurrent = typeof(EffectObject);
         GetElement<Button>("spawner.objects.ice").onClick += (_, _) => _spawnerCurrent = typeof(IceObject);
         GetElement<Button>("spawner.objects.message").onClick += (_, _) => _spawnerCurrent = typeof(MessageObject);
         GetElement<Button>("spawner.objects.grass").onClick += (_, _) => _spawnerCurrent = typeof(GrassObject);
@@ -423,10 +420,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
             return;
 
         newObj.position = _level.ScreenToLevelPosition(input.mousePosition);
-
-        if(newObj is EffectObject effectObject) {
-            effectObject.effect = GetElement<InputField>("spawner.effect").value ?? "none";
-        }
 
         NetOutgoingMessage msg = _client.peer.CreateMessage(SyncedLevelObject.PreallocSize);
         msg.Write((byte)CtsDataType.AddObject);

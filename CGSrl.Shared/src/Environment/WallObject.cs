@@ -6,15 +6,17 @@ namespace CGSrl.Shared.Environment;
 public class WallObject : MovableObject {
     public class Broken : MovableObject {
         public override int layer => -1;
-        protected override RenderCharacter character { get; } =
+        public override RenderCharacter character { get; } =
             new('%', Color.transparent, new Color(0.5f, 0.5f, 0.5f, 1f));
+        public override bool blocksLight => false;
         protected override bool canPush => true;
         protected override float mass => 8f;
         protected override float strength => float.PositiveInfinity;
     }
 
     public override int layer => 0;
-    protected override RenderCharacter character { get; } = new('#', Color.transparent, Color.white);
+    public override RenderCharacter character { get; } = new('#', Color.transparent, Color.white);
+    public override bool blocksLight => true;
     protected override bool canPush => false;
     protected override float mass => 4f;
     protected override float strength => 2f;

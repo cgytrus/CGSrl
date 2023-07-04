@@ -55,7 +55,7 @@ public class Game : IGame, ISetupable, ITickable {
             return;
         Resolution res = RunWfc(start, size, true);
         if(res != Resolution.Decided) {
-            logger.Warn("Undecided, generating without neighbors");
+            //logger.Warn("Undecided, generating without neighbors");
             res = RunWfc(start, size, false);
         }
         FillWithFloor(start, size);

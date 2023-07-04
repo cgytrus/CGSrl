@@ -13,7 +13,8 @@ public class BombObject : InteractableObject, ITickable {
     public override string prompt => "detonate";
 
     public override int layer => 1;
-    protected override RenderCharacter character { get; } = new('O', Color.transparent, Color.white);
+    public override RenderCharacter character { get; } = new('O', Color.transparent, Color.white);
+    public override bool blocksLight => false;
 
     private int _explodeInTicks;
 
