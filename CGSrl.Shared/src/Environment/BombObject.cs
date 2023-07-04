@@ -20,16 +20,19 @@ public class BombObject : InteractableObject {
             for(int x = -range; x <= range; x++) {
                 if(x == 0 && y == 0)
                     continue;
-                Vector2Int pos = position + new Vector2Int(x, y);
-                Vector2 dir = new(x, y);
-                float dist = dir.Length();
-                if(dist > Range)
-                    continue;
-                ApplyForceAt(pos, dir, dist);
+                ExplodeAt(x, y);
             }
         }
+        if(inLevel)
+            level.Remove(this);
     }
-    private void ApplyForceAt(Vector2Int pos, Vector2 dir, float dist) {
+
+    private void ExplodeAt(int x, int y) {
+        Vector2Int pos = position + new Vector2Int(x, y);
+        Vector2 dir = new(x, y);
+        float dist = dir.Length();
+        if(dist > Range)
+            return;
         foreach(MovableObject movable in level.GetObjectsAt<MovableObject>(pos))
             movable.AddForce(dir / dist * (1f - (dist - 1f) / Range) * Force);
     }
