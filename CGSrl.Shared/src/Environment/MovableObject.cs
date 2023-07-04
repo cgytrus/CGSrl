@@ -33,7 +33,7 @@ public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
         ProcessVelocity(ref pushable);
     }
 
-    public void AddForce(Vector2 velocity) => _velocity += velocity;
+    public void AddForce(Vector2 velocity) => _velocity += velocity / mass;
 
     protected void AddMovementForce(Vector2 velocity) {
         velocity *= GetCurrentFriction() * 2f;

@@ -9,14 +9,14 @@ public class WallObject : MovableObject {
         protected override RenderCharacter character { get; } =
             new('%', Color.transparent, new Color(0.5f, 0.5f, 0.5f, 1f));
         protected override bool canPush => true;
-        protected override float mass => 1f;
+        protected override float mass => 8f;
         protected override float strength => float.PositiveInfinity;
     }
 
     public override int layer => 0;
     protected override RenderCharacter character { get; } = new('#', Color.transparent, Color.white);
     protected override bool canPush => false;
-    protected override float mass => float.PositiveInfinity;
-    protected override float strength => 8f;
+    protected override float mass => 4f;
+    protected override float strength => 2f;
     protected override MovableObject CreateBroken() => new Broken { position = position };
 }
