@@ -13,22 +13,27 @@ namespace CGSrl.Shared.Environment;
 public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
     protected abstract bool canPush { get; }
     protected abstract float mass { get; }
+    protected abstract float strength { get; }
 
+    private bool _broken;
     private Vector2 _velocity;
     private Vector2 _subPos;
+
+    protected virtual MovableObject? CreateBroken() => null;
 
     public virtual void Added() => level.LoadChunkAt(level.LevelToChunkPosition(position));
 
     public virtual void Tick(TimeSpan time) {
+        // TODO: do more testing and remove when ensured that broken objects don't tick
+        if(_broken) {
+            Console.WriteLine("broken ticked !!!");
+            return;
+        }
         bool pushable = true;
         ProcessVelocity(ref pushable);
     }
 
-    public void AddForce(Vector2 velocity) {
-        if(!canPush)
-            return;
-        _velocity += velocity;
-    }
+    public void AddForce(Vector2 velocity) => _velocity += velocity;
 
     protected void AddMovementForce(Vector2 velocity) {
         velocity *= GetCurrentFriction() * 2f;
@@ -50,8 +55,29 @@ public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
             _velocity.Y = 0f;
     }
 
+    private bool Break(ref bool pushable) {
+        _broken = true;
+        MovableObject? broken = CreateBroken();
+        if(broken is null) {
+            level.Remove(this);
+            return true;
+        }
+        broken._velocity = _velocity;
+        broken._subPos = _subPos;
+        level.Add(broken);
+        level.Remove(this);
+        return broken.ProcessVelocity(ref pushable);
+    }
+
     private bool ProcessVelocity(ref bool pushable) {
         CheckVelocityForNan();
+        if(_velocity.LengthSquared() > strength * strength)
+            return Break(ref pushable);
+        if(!canPush) {
+            pushable = false;
+            _velocity = Vector2.Zero;
+            return false;
+        }
         Vector2 velocity = new(Math.Clamp(_velocity.X, -1f, 1f), Math.Clamp(_velocity.Y, -1f, 1f));
         _subPos += velocity;
         Vector2Int move = new();
@@ -111,10 +137,6 @@ public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
         level.HasObjectAt<IceObject>(position) ? new Vector2(1f / 10f, 1f / 10f) : new Vector2(1f, 1f);
 
     private bool TryPush(Vector2 velocity, float otherMass, ref bool pushable) {
-        if(!canPush) {
-            pushable = false;
-            return false;
-        }
         _velocity += new Vector2(Math.Clamp(velocity.X * otherMass / mass, -1f, 1f),
             Math.Clamp(velocity.Y * otherMass / mass, -1f, 1f));
         CheckVelocityForNan();
@@ -129,7 +151,7 @@ public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
             return Random.Shared.Next(0, 2) == 0 ?
                 TryMoveDiagHorFirst(delta, ref pushable) :
                 TryMoveDiagVerFirst(delta, ref pushable);
-        if(level.TryGetObjectAt(position + delta, out MovableObject? next) &&
+        if(level.TryGetObjectAt(position + delta, layer, out MovableObject? next) &&
             !next.TryPush(_velocity, mass, ref pushable))
             return false;
         position += delta;
@@ -144,15 +166,15 @@ public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
         Vector2 verV = _velocity with { X = 0 };
         bool moved = false;
 
-        if(!level.TryGetObjectAt(position + hor, out MovableObject? nextHor) ||
+        if(!level.TryGetObjectAt(position + hor, layer, out MovableObject? nextHor) ||
             nextHor.TryPush(horV, mass, ref pushable)) {
             moved = true;
             this.position += hor;
         }
 
-        bool diag = !moved || !level.TryGetObjectAt(position + delta, out MovableObject? next) ||
+        bool diag = !moved || !level.TryGetObjectAt(position + delta, layer, out MovableObject? next) ||
             next.TryPush(_velocity, mass, ref pushable);
-        if(!diag || level.TryGetObjectAt(position + ver, out MovableObject? nextVer) &&
+        if(!diag || level.TryGetObjectAt(position + ver, layer, out MovableObject? nextVer) &&
             !nextVer.TryPush(verV, mass, ref pushable))
             return moved;
         this.position += ver;
@@ -167,15 +189,15 @@ public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
         Vector2 verV = _velocity with { X = 0 };
         bool moved = false;
 
-        if(!level.TryGetObjectAt(position + ver, out MovableObject? nextVer) ||
+        if(!level.TryGetObjectAt(position + ver, layer, out MovableObject? nextVer) ||
             nextVer.TryPush(verV, mass, ref pushable)) {
             moved = true;
             this.position += ver;
         }
 
-        bool diag = !moved || !level.TryGetObjectAt(position + delta, out MovableObject? next) ||
+        bool diag = !moved || !level.TryGetObjectAt(position + delta, layer, out MovableObject? next) ||
             next.TryPush(_velocity, mass, ref pushable);
-        if(!diag || level.TryGetObjectAt(position + hor, out MovableObject? nextHor) &&
+        if(!diag || level.TryGetObjectAt(position + hor, layer, out MovableObject? nextHor) &&
             !nextHor.TryPush(horV, mass, ref pushable))
             return moved;
         this.position += hor;

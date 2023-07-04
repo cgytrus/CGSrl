@@ -19,7 +19,8 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable {
         highlighted ? new Color(1f, 1f, 0f, 0.2f) : Color.transparent, new Color(0, 255, 255, 255));
 
     protected override bool canPush => true;
-    protected override float mass => 1f;
+    protected override float mass => 2f;
+    protected override float strength => float.PositiveInfinity;
 
     public NetConnection? connection { get; set; }
 
