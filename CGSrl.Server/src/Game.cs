@@ -34,7 +34,7 @@ public class Game : IGame, ISetupable, ITickable {
             Core.engine.resources, new Vector2Int(16, 16));
 
         SyncedLevel wfcLevel = new(false, Core.engine.renderer, Core.engine.input, Core.engine.audio,
-            Core.engine.resources, new Vector2Int(16, 16));
+            Core.engine.resources, new Vector2Int(16, 16)) { doLighting = false };
         LoadLevel(wfcLevel, "wfc.bin");
         ITopoArray<Tile> sample = ReadSampleFrom(wfcLevel);
         TileModel model = new OverlappingModel(sample, WfcExtra + 1, 4, true);

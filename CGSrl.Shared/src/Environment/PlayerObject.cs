@@ -22,12 +22,9 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     protected override float mass => 2f;
     protected override float strength => float.PositiveInfinity;
 
-    // you fucking retarded bitch
-#pragma warning disable CA1822
-    public float brightness => connection is null ? 0f : 1f;
-    public byte emission => connection is null ? (byte)0 : (byte)16;
+    public float brightness => 1f;
+    public byte emission => !inLevel || !level.isClient || connection is null ? (byte)0 : (byte)16;
     public byte visibility => connection is null ? (byte)0 : (byte)16;
-#pragma warning restore CA1822
 
     public NetConnection? connection { get; set; }
 
