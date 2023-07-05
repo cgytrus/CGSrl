@@ -27,9 +27,6 @@ namespace CGSrl.Client.Screens;
 public class GameScreen : LayoutResource, IScreen, IUpdatable {
     public const string GlobalId = "layouts/game";
 
-    private const float MessageFadeInTime = 0.5f;
-    private const double MessageStayTime = 60d;
-    private const float MessageFadeOutTime = 5f;
     private const int MaxMessageHistory = 100;
 
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
@@ -461,27 +458,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         if(_messages is null)
             return;
         foreach(ChatMessage message in _messages.items)
-            UpdateChatMessage(message);
-    }
-    private void UpdateChatMessage(ChatMessage message) {
-        if(_messages is null)
-            return;
-        if(message.element is null) {
-            logger.Warn("message doesnt have element????");
-            return;
-        }
-        if(message.player is not null)
-            message.player.highlighted = message.player.highlighted ||
-                input.mousePosition.InBounds(_messages.bounds) &&
-                input.mousePosition.InBounds(message.element.bounds);
-        if(message.element.effect is not FadeEffect { fading: false } fade)
-            return;
-        if(NetTime.Now - message.time >= MessageStayTime) {
-            ChatMessage msg = message;
-            fade.Start(MessageFadeOutTime, float.PositiveInfinity, () => _messages.Remove(msg));
-        }
-        else if(message.isNew)
-            fade.Start(0f, MessageFadeInTime, message.fadeOutCallback);
+            message.Update(input, _messages);
     }
 
     private void SendChatMessage() {

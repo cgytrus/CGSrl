@@ -36,16 +36,18 @@ public class ChatMessageListTemplate : ListBoxTemplateResource<ChatMessage> {
         }
 
         public override void UpdateWithItem(int index, ChatMessage item, int width) {
+            if(item.fade is null) {
+                item.fade = new FadeEffect();
+                item.fade.Start(0f, ChatMessage.FadeInTime, () => { });
+            }
+
             Text text = GetElement<Text>("text");
             text.text = string.Format(_formatStr, item.player?.displayName ?? "\f0SYSTEM\f\0", item.text);
-            if(item.element == text)
-                return;
             item.element = text;
-            FadeEffect fade = new();
-            text.effect = fade;
+            text.effect = item.fade;
             ImmutableArray<char> formatters = text.formatting.Keys.ToImmutableArray();
             foreach(char formatter in formatters)
-                text.formatting[formatter] = text.formatting[formatter] with { effect = fade };
+                text.formatting[formatter] = text.formatting[formatter] with { effect = item.fade };
         }
 
         public override void MoveTo(Vector2Int origin, int index, Vector2Int size) {
