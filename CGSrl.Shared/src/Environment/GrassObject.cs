@@ -19,6 +19,7 @@ public class GrassObject : InteractableObject {
             return;
         NetOutgoingMessage msg = player.connection.Peer.CreateMessage();
         msg.Write((byte)StcDataType.ChatMessage);
+        msg.Write(Guid.Empty);
         msg.WriteTime(false);
         msg.Write("grass touched !!!!!!!!!!!!!!!!!");
         player.connection.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
