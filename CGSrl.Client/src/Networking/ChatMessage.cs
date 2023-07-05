@@ -30,13 +30,10 @@ public class ChatMessage {
     public void Update(IInput input, ListBox<ChatMessage> messages) {
         if(element is null || fade is null)
             return;
-        if(player is not null)
-            player.highlighted = player.highlighted ||
-                input.mousePosition.InBounds(messages.bounds) &&
+        if(player is not null && !player.highlighted)
+            player.highlighted = input.mousePosition.InBounds(messages.bounds) &&
                 input.mousePosition.InBounds(element.bounds);
-        if(fade.fading)
-            return;
-        if(NetTime.Now - _time >= StayTime)
+        if(!fade.fading && NetTime.Now - _time >= StayTime)
             fade.Start(FadeOutTime, float.PositiveInfinity, () => messages.Remove(this));
     }
 }
