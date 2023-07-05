@@ -131,7 +131,7 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     }
 
     public void Moved(Vector2Int from) {
-        if(!level.isClient)
+        if(!level.isClient || connection is null)
             return;
         Vector2Int delta = position - from;
         Vector2Int cameraPosition = level.LevelToCameraPosition(position);
