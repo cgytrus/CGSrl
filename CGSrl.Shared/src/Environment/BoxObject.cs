@@ -5,7 +5,7 @@ namespace CGSrl.Shared.Environment;
 
 public class BoxObject : MovableObject {
     public class Broken : MovableObject {
-        public override int layer => -1;
+        public override int layer => -2;
         public override RenderCharacter character { get; } = new('%', Color.transparent, new Color(0.5f, 0.5f, 0f, 1f));
         public override bool blocksLight => false;
         protected override bool canPush => true;
