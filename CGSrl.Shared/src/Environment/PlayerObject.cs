@@ -23,12 +23,20 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     protected override float strength => float.PositiveInfinity;
 
     public float brightness => 1f;
-    public byte emission => !inLevel || !level.isClient || connection is null ? (byte)0 : (byte)16;
-    public byte visibility => connection is null ? (byte)0 : (byte)16;
+    public byte emission => highlighted ? (byte)1 : (byte)0;
+    public byte reveal => connection is null ? (byte)0 : (byte)16;
 
     public NetConnection? connection { get; set; }
 
-    public bool highlighted { get; set; }
+    public bool highlighted {
+        get => _highlighted;
+        set {
+            if(_highlighted != value)
+                lightDirty = true;
+            _highlighted = value;
+        }
+    }
+    private bool _highlighted;
 
     public string username {
         get => _username;
