@@ -38,7 +38,8 @@ public class Game : IGame, ISetupable, ITickable {
         LoadLevel(wfcLevel, "wfc.bin");
         ITopoArray<Tile> sample = ReadSampleFrom(wfcLevel);
         TileModel model = new OverlappingModel(sample, WfcExtra + 1, 4, true);
-        ITopology topology = new GridTopology(16 + WfcExtra * 2, 16 + WfcExtra * 2, false);
+        ITopology topology =
+            new GridTopology(_level.chunkSize.x + WfcExtra * 2, _level.chunkSize.y + WfcExtra * 2, false);
         _wfcPropagator = new TilePropagator(model, topology);
 
         if(File.Exists("level.bin")) {
