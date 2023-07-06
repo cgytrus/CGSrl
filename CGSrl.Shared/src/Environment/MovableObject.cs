@@ -21,7 +21,10 @@ public abstract class MovableObject : SyncedLevelObject, IAddable, ITickable {
 
     protected virtual MovableObject? CreateBroken() => null;
 
-    public virtual void Added() => level.LoadChunkAt(level.LevelToChunkPosition(position));
+    public virtual void Added() {
+        if(!level.isClient)
+            level.LoadChunkAt(level.LevelToChunkPosition(position));
+    }
 
     public virtual void Tick(TimeSpan time) {
         // TODO: do more testing and remove when ensured that broken objects don't tick

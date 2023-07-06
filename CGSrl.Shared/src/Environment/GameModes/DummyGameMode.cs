@@ -9,5 +9,5 @@ public class DummyGameMode : SyncedGameMode {
     public override bool allowRemovingObjects => true;
 
     protected override void Initialize() { }
-    public override void GenerateChunk(Vector2Int start, Vector2Int size) { }
+    public override void GenerateChunk(Vector2Int start) { }
 }

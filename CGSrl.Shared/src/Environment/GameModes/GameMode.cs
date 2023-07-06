@@ -15,7 +15,7 @@ public abstract class GameMode<TLevel, TChunk, TObject>
 
     protected abstract void Initialize();
 
-    public abstract void GenerateChunk(Vector2Int start, Vector2Int size);
+    public abstract void GenerateChunk(Vector2Int start);
 
     internal void SetLevel(Level<TLevel, TChunk, TObject>? level) {
         _level = level as TLevel;

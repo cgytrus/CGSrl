@@ -37,29 +37,29 @@ public class WfcLevelGenerator : SyncedLevelGenerator {
         return TopoArray.Create(grid, false);
     }
 
-    public override void GenerateChunk(Vector2Int start, Vector2Int size) {
-        Resolution res = RunWfc(start, size, true);
+    public override void GenerateChunk(Vector2Int start) {
+        Resolution res = RunWfc(start, true);
         if(res != Resolution.Decided) {
             //logger.Warn("Undecided, generating without neighbors");
-            res = RunWfc(start, size, false);
+            res = RunWfc(start, false);
         }
-        FillWithFloor(start, size);
+        FillWithFloor(start);
         if(res == Resolution.Decided)
-            FillWithResult(start, size);
+            FillWithResult(start);
         else
             logger.Error("Failed to generate chunk");
     }
 
-    private Resolution RunWfc(Vector2Int start, Vector2Int size, bool useNeighbors) {
+    private Resolution RunWfc(Vector2Int start, bool useNeighbors) {
         _wfcPropagator.Clear();
         if(useNeighbors)
-            WfcSelectContext(start, size);
+            WfcSelectContext(start);
         return _wfcPropagator.Run();
     }
-    private void WfcSelectContext(Vector2Int start, Vector2Int size) {
-        for(int y = -_extra; y < size.y + _extra; y++) {
-            for(int x = -_extra; x < size.x + _extra; x++) {
-                if(x >= 0 && y >= 0 && x < size.x && y < size.y ||
+    private void WfcSelectContext(Vector2Int start) {
+        for(int y = -_extra; y < level.chunkSize.y + _extra; y++) {
+            for(int x = -_extra; x < level.chunkSize.x + _extra; x++) {
+                if(x >= 0 && y >= 0 && x < level.chunkSize.x && y < level.chunkSize.y ||
                     !level.TryGetObjectAt(new Vector2Int(start.x + x, start.y + y), out SyncedLevelObject? obj))
                     continue;
                 _wfcPropagator.Select(_extra + x, _extra + y, 0, new Tile(obj.GetType()));
@@ -67,15 +67,15 @@ public class WfcLevelGenerator : SyncedLevelGenerator {
         }
     }
 
-    private void FillWithFloor(Vector2Int start, Vector2Int size) {
-        for(int y = 0; y < size.y; y++)
-            for(int x = 0; x < size.x; x++)
+    private void FillWithFloor(Vector2Int start) {
+        for(int y = 0; y < level.chunkSize.y; y++)
+            for(int x = 0; x < level.chunkSize.x; x++)
                 level.Add(new FloorObject { position = new Vector2Int(start.x + x, start.y + y) });
     }
-    private void FillWithResult(Vector2Int start, Vector2Int size) {
+    private void FillWithResult(Vector2Int start) {
         ITopoArray<Type?> tiles = _wfcPropagator.ToValueArray<Type?>();
-        for(int y = 0; y < size.y; y++) {
-            for(int x = 0; x < size.x; x++) {
+        for(int y = 0; y < level.chunkSize.y; y++) {
+            for(int x = 0; x < level.chunkSize.x; x++) {
                 Vector2Int position = new(start.x + x, start.y + y);
                 Type? type = tiles.Get(_extra + x, _extra + y);
                 if(type is null || Activator.CreateInstance(type) is not SyncedLevelObject obj)

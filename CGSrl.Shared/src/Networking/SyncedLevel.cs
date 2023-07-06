@@ -18,6 +18,8 @@ namespace CGSrl.Shared.Networking;
 public class SyncedLevel : Level<SyncedLevel, SyncedChunk, SyncedLevelObject> {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
+    protected override TimeSpan maxGenerationTime { get; }
+
     public bool isClient { get; }
     public GameMode<SyncedLevel, SyncedChunk, SyncedLevelObject> gameMode { get; }
 
@@ -27,8 +29,14 @@ public class SyncedLevel : Level<SyncedLevel, SyncedChunk, SyncedLevelObject> {
         this.isClient = isClient;
         this.gameMode = gameMode;
         gameMode.SetLevel(this);
-        chunkCreated += gameMode.GenerateChunk;
     }
+
+    public SyncedLevel(bool isClient, IRenderer renderer, IInput input, IAudio audio, IResources resources,
+        Vector2Int chunkSize, GameMode<SyncedLevel, SyncedChunk, SyncedLevelObject> gameMode,
+        TimeSpan maxGenerationTime) : this(isClient, renderer, input, audio, resources, chunkSize, gameMode) =>
+        this.maxGenerationTime = maxGenerationTime;
+
+    protected override void GenerateChunk(Vector2Int start) => gameMode.GenerateChunk(start);
 
     public override void Update(TimeSpan time) {
         if(gameMode is IUpdatable updatable)

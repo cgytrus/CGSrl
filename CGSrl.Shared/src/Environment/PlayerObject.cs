@@ -73,7 +73,10 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     // client-side only, have to do this cuz it's in the shared project and i don't wanna depend on PRR.UI here xd
     public object? text { get; set; }
 
-    public override void Added() => LoadChunks();
+    public override void Added() {
+        if(!level.isClient)
+            LoadChunks();
+    }
 
     public void Update(TimeSpan time) {
         if(connection is null)
@@ -130,8 +133,8 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
 
     private void LoadChunks() {
         Vector2Int currentChunk = level.LevelToChunkPosition(position);
-        for(int x = currentChunk.x - 5; x <= currentChunk.x + 5; x++)
-            for(int y = currentChunk.y - 3; y <= currentChunk.y + 3; y++)
+        for(int x = currentChunk.x - 4; x <= currentChunk.x + 4; x++)
+            for(int y = currentChunk.y - 2; y <= currentChunk.y + 2; y++)
                 level.LoadChunkAt(new Vector2Int(x, y));
     }
 

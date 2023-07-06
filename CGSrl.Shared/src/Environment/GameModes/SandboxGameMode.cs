@@ -24,5 +24,5 @@ public class SandboxGameMode : SyncedGameMode {
         _generator = new WfcLevelGenerator(level, wfcLevel, 3);
     }
 
-    public override void GenerateChunk(Vector2Int start, Vector2Int size) => _generator?.GenerateChunk(start, size);
+    public override void GenerateChunk(Vector2Int start) => _generator?.GenerateChunk(start);
 }

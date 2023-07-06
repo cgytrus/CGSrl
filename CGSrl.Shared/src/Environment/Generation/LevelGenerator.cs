@@ -11,5 +11,5 @@ public abstract class LevelGenerator<TLevel, TChunk, TObject>
 
     protected LevelGenerator(TLevel level) => this.level = level;
 
-    public abstract void GenerateChunk(Vector2Int start, Vector2Int size);
+    public abstract void GenerateChunk(Vector2Int start);
 }
