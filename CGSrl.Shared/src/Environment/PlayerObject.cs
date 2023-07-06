@@ -22,7 +22,7 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     protected override float mass => 2f;
     protected override float strength => float.PositiveInfinity;
 
-    public float brightness => 1f;
+    public Color3 color => new(1f, 1f, 1f);
     public byte emission => highlighted ? (byte)1 : (byte)0;
     public byte reveal => connection is null ? (byte)0 : (byte)16;
 

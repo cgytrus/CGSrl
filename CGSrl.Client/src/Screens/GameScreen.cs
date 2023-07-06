@@ -101,6 +101,9 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         AddElement<Button>("spawner.objects.grass");
         AddElement<Button>("spawner.objects.bomb");
         AddElement<Button>("spawner.objects.light");
+        AddElement<Button>("spawner.objects.redLight");
+        AddElement<Button>("spawner.objects.greenLight");
+        AddElement<Button>("spawner.objects.blueLight");
     }
 
     public override void Load(string id) {
@@ -145,6 +148,9 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         GetElement<Button>("spawner.objects.grass").onClick += (_, _) => _spawnerCurrent = typeof(GrassObject);
         GetElement<Button>("spawner.objects.bomb").onClick += (_, _) => _spawnerCurrent = typeof(BombObject);
         GetElement<Button>("spawner.objects.light").onClick += (_, _) => _spawnerCurrent = typeof(LightObject);
+        GetElement<Button>("spawner.objects.redLight").onClick += (_, _) => _spawnerCurrent = typeof(RedLightObject);
+        GetElement<Button>("spawner.objects.greenLight").onClick += (_, _) => _spawnerCurrent = typeof(GreenLightObject);
+        GetElement<Button>("spawner.objects.blueLight").onClick += (_, _) => _spawnerCurrent = typeof(BlueLightObject);
 
         _level = new SyncedLevel(true, renderer, input, audio, _resources, new Vector2Int(16, 16));
         _level.objectAdded += obj => {
