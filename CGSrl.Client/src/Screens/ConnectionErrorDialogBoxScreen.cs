@@ -21,8 +21,6 @@ public class ConnectionErrorDialogBoxScreen : DialogBoxScreenResource {
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
 
-    protected override string layoutName => "connectionErrorDialog";
-
     public string text { get; set; } = "";
 
     private string _formatStr = "{0}";
@@ -31,6 +29,7 @@ public class ConnectionErrorDialogBoxScreen : DialogBoxScreenResource {
 
     public override void Preload() {
         base.Preload();
+        AddLayout("connectionErrorDialog");
         AddElement<Text>("title");
         AddElement<Text>("text");
         AddElement<Button>("ok");

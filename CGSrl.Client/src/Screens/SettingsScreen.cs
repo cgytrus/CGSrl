@@ -24,8 +24,6 @@ public class SettingsScreen : LayoutResource, IScreen, IUpdatable {
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
 
-    protected override string layoutName => "settings";
-
     private bool reload {
         get => _reload;
         set {
@@ -56,8 +54,10 @@ public class SettingsScreen : LayoutResource, IScreen, IUpdatable {
         base.Preload();
         AddDependency<ResourcePackSelectorTemplate>(ResourcePackSelectorTemplate.GlobalId);
 
-        AddPath("frameLeft.text", $"{layoutsPath}/{layoutName}Left.txt");
-        AddPath("frameRight.text", $"{layoutsPath}/{layoutName}Right.txt");
+        AddLayout("settings");
+
+        AddPath("frameLeft.text", $"{layoutsPath}/mainMenuLeft.txt");
+        AddPath("frameRight.text", $"{layoutsPath}/mainMenuRight.txt");
 
         AddElement<Text>("frameLeft");
         AddElement<Text>("frameRight");

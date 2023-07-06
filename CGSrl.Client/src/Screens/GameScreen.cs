@@ -14,7 +14,6 @@ using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
 using PER.Abstractions.Screens;
-using PER.Abstractions.UI;
 using PER.Util;
 
 using PRR.UI;
@@ -22,17 +21,14 @@ using PRR.UI.Resources;
 
 namespace CGSrl.Client.Screens;
 
-public class GameScreen : LayoutResource, IScreen, IUpdatable {
-    public const string GlobalId = "layouts/game";
-
+public abstract class GameScreen : LayoutResource, IScreen, IUpdatable {
     private const int MaxMessageHistory = 100;
 
     protected override IRenderer renderer => Core.engine.renderer;
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
 
-    protected override string layoutName => "game";
-
+    protected GameClient client => _client!;
     private GameClient? _client;
 
     private Text? _loadingText;
@@ -41,54 +37,34 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
 
     private ListBox<PlayerObject>? _players;
     private ListBox<ChatMessage>? _messages;
+
     private InputField? _chatInput;
     private readonly List<string> _messageHistory = new();
 
     private Text? _interactableText;
     private string _interactableFormat = "{0}";
 
-    private Text? _infoText;
-    private string _infoFormat = "{0} {1} {2}";
-
-    private Type _spawnerCurrent;
-
     private bool _prevEscapePressed;
     private bool _prevTPressed;
     private bool _prevUpPressed;
     private bool _prevDownPressed;
 
-    private bool _prevLeftPressed;
-    private bool _prevRightPressed;
-
-    public GameScreen(IResources resources) {
+    protected GameScreen(IResources resources) {
         resources.TryAddResource(PlayerListTemplate.GlobalId, new PlayerListTemplate());
         resources.TryAddResource(ChatMessageListTemplate.GlobalId, new ChatMessageListTemplate());
-        _spawnerCurrent = typeof(WallObject);
     }
 
     public override void Preload() {
         base.Preload();
         AddDependency<PlayerListTemplate>(PlayerListTemplate.GlobalId);
         AddDependency<ChatMessageListTemplate>(ChatMessageListTemplate.GlobalId);
-
+        AddLayout("game");
         AddElement<ProgressBar>("loading.progress");
         AddElement<Text>("loading.text");
         AddElement<ListBox<PlayerObject>>("players");
         AddElement<ListBox<ChatMessage>>("chat.messages");
         AddElement<InputField>("chat.input");
         AddElement<Text>("interactablePrompt");
-        AddElement<Text>("info");
-        AddElement<Button>("spawner.objects.floor");
-        AddElement<Button>("spawner.objects.wall");
-        AddElement<Button>("spawner.objects.box");
-        AddElement<Button>("spawner.objects.ice");
-        AddElement<Button>("spawner.objects.message");
-        AddElement<Button>("spawner.objects.grass");
-        AddElement<Button>("spawner.objects.bomb");
-        AddElement<Button>("spawner.objects.light");
-        AddElement<Button>("spawner.objects.redLight");
-        AddElement<Button>("spawner.objects.greenLight");
-        AddElement<Button>("spawner.objects.blueLight");
     }
 
     public override void Load(string id) {
@@ -113,22 +89,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
 
         _interactableText = GetElement<Text>("interactablePrompt");
         _interactableFormat = _interactableText.text ?? _interactableFormat;
-
-        _infoText = GetElement<Text>("info");
-        _infoFormat = _infoText.text ?? _infoFormat;
-
-        GetElement<Button>("spawner.objects.floor").onClick += (_, _) => _spawnerCurrent = typeof(FloorObject);
-        GetElement<Button>("spawner.objects.wall").onClick += (_, _) => _spawnerCurrent = typeof(WallObject);
-        GetElement<Button>("spawner.objects.box").onClick += (_, _) => _spawnerCurrent = typeof(BoxObject);
-        GetElement<Button>("spawner.objects.ice").onClick += (_, _) => _spawnerCurrent = typeof(IceObject);
-        GetElement<Button>("spawner.objects.message").onClick += (_, _) => _spawnerCurrent = typeof(MessageObject);
-        GetElement<Button>("spawner.objects.grass").onClick += (_, _) => _spawnerCurrent = typeof(GrassObject);
-        GetElement<Button>("spawner.objects.bomb").onClick += (_, _) => _spawnerCurrent = typeof(BombObject);
-        GetElement<Button>("spawner.objects.light").onClick += (_, _) => _spawnerCurrent = typeof(LightObject);
-        GetElement<Button>("spawner.objects.redLight").onClick += (_, _) => _spawnerCurrent = typeof(RedLightObject);
-        GetElement<Button>("spawner.objects.greenLight").onClick += (_, _) => _spawnerCurrent = typeof(GreenLightObject);
-        GetElement<Button>("spawner.objects.blueLight").onClick += (_, _) => _spawnerCurrent = typeof(BlueLightObject);
-        ToggleSpawner(false);
     }
 
     public void ContinueConnect(GameClient client) {
@@ -139,9 +99,8 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
             client.SetUi(_loadingText, _loadingTextFormat, _loadingProgress, _players, _messages);
     }
 
-    private void Joined() => ToggleSpawner(_client?.level?.gameMode.allowAddingObjects ?? false);
-
-    private void Disconnected(string reason, bool isError) => ToggleSpawner(false);
+    protected virtual void Joined() { }
+    protected virtual void Disconnected(string reason, bool isError) { }
 
     public void Open() { }
     public void Close() {
@@ -149,12 +108,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
             return;
         _client.onJoin -= Joined;
         _client.onDisconnect -= Disconnected;
-    }
-
-    private void ToggleSpawner(bool enabled) {
-        foreach((string id, Element element) in elements)
-            if(id.StartsWith("spawner.", StringComparison.Ordinal))
-                element.enabled = enabled;
     }
 
     public void Update(TimeSpan time) {
@@ -165,7 +118,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
             input.block = block;
             _client.Update(time);
             UpdateInteractablePrompt();
-            UpdateInfoText();
+            UpdateInterface();
             _client.level?.Update(time);
             input.block = prevBlock;
         }
@@ -174,18 +127,18 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         for(int i = 0; i < elementList.Count; i++)
             elementList[i].Update(time);
 
-        UpdateInput(block);
+        UpdateInput(block || _chatInput?.currentState == ClickableElement.State.Clicked);
     }
 
-    private void UpdateInput(bool block) {
+    protected virtual void UpdateInterface() { }
+
+    protected virtual void UpdateInput(bool block) {
         if(_chatInput?.typing ?? false)
             UpdateChatHistoryInput();
 
         if(block) {
             _prevEscapePressed = input.KeyPressed(KeyCode.Escape);
             _prevTPressed = input.KeyPressed(KeyCode.T);
-            _prevLeftPressed = input.MouseButtonPressed(MouseButton.Left);
-            _prevRightPressed = input.MouseButtonPressed(MouseButton.Right);
             return;
         }
 
@@ -195,14 +148,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
             return;
 
         UpdateChatHotkey();
-
-        if(_chatInput?.currentState == ClickableElement.State.Clicked) {
-            _prevLeftPressed = input.MouseButtonPressed(MouseButton.Left);
-            _prevRightPressed = input.MouseButtonPressed(MouseButton.Right);
-            return;
-        }
-
-        UpdateSpawner();
     }
 
     private void UpdateChatHistoryInput() {
@@ -248,54 +193,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         _prevTPressed = tPressed;
     }
 
-    private void UpdateSpawner() {
-        if(_client?.level is null)
-            return;
-
-        if(input.mousePosition is { x: >= 100, y: <= 10 })
-            return;
-
-        bool leftPressed = input.MouseButtonPressed(MouseButton.Left);
-        bool rightPressed = input.MouseButtonPressed(MouseButton.Right);
-
-        if(_client.level.gameMode.allowAddingObjects && !_prevLeftPressed && leftPressed &&
-            !_client.level.HasObjectAt(_client.level.ScreenToLevelPosition(input.mousePosition), _spawnerCurrent))
-            CreateCurrentSpawnerObject();
-        if(_client.level.gameMode.allowRemovingObjects && !_prevRightPressed && rightPressed)
-            RemoveCurrentObject();
-
-        _prevLeftPressed = leftPressed;
-        _prevRightPressed = rightPressed;
-    }
-
-    private void CreateCurrentSpawnerObject() {
-        if(_client?.level is null)
-            return;
-
-        if(Activator.CreateInstance(_spawnerCurrent) is not SyncedLevelObject newObj)
-            return;
-
-        newObj.position = _client.level.ScreenToLevelPosition(input.mousePosition);
-
-        NetOutgoingMessage msg = _client.peer.CreateMessage(SyncedLevelObject.PreallocSize);
-        msg.Write((byte)CtsDataType.AddObject);
-        newObj.WriteTo(msg);
-        _client.peer.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
-    }
-
-    private void RemoveCurrentObject() {
-        if(_client?.level is null ||
-            !_client.level.TryGetObjectAt(_client.level.ScreenToLevelPosition(input.mousePosition),
-                out SyncedLevelObject? obj) &&
-            obj is not PlayerObject)
-            return;
-
-        NetOutgoingMessage msg = _client.peer.CreateMessage(17);
-        msg.Write((byte)CtsDataType.RemoveObject);
-        msg.Write(obj.id);
-        _client.peer.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
-    }
-
     private void SendChatMessage() {
         if(_client is null || _chatInput is null || string.IsNullOrEmpty(_chatInput.value))
             return;
@@ -326,15 +223,5 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
                 _interactableText.position = _client.level.LevelToScreenPosition(obj.position + new Vector2Int(1, -1));
                 break;
         }
-    }
-
-    private void UpdateInfoText() {
-        if(_infoText is null || _client?.level is null)
-            return;
-        _infoText.text = string.Format(_infoFormat,
-            input.mousePosition,
-            _client.level.ScreenToCameraPosition(input.mousePosition),
-            _client.level.ScreenToLevelPosition(input.mousePosition),
-            _client.level.ScreenToChunkPosition(input.mousePosition));
     }
 }

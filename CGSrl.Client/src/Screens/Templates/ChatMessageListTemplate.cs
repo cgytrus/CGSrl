@@ -20,10 +20,10 @@ public class ChatMessageListTemplate : ListBoxTemplateResource<ChatMessage> {
     protected override IRenderer renderer => Core.engine.renderer;
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
-    protected override string layoutName => "chatItem";
 
     public override void Preload() {
         base.Preload();
+        AddLayout("chatItem");
         AddElement<Text>("text");
     }
 

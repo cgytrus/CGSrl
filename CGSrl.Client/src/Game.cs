@@ -61,7 +61,7 @@ public class Game : IGame, ISetupable, IUpdatable {
         resources.TryAddResource(MainMenuScreen.GlobalId, new MainMenuScreen(_settings));
         resources.TryAddResource(SettingsScreen.GlobalId, new SettingsScreen(_settings, resources));
         resources.TryAddResource(ConnectingScreen.GlobalId, new ConnectingScreen(resources));
-        resources.TryAddResource(GameScreen.GlobalId, new GameScreen(resources));
+        resources.TryAddResource(SandboxGameScreen.GlobalId, new SandboxGameScreen(resources));
 
         resources.TryAddResource(ConnectionErrorDialogBoxScreen.GlobalId, new ConnectionErrorDialogBoxScreen());
     }

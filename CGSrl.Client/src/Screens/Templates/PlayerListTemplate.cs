@@ -18,10 +18,10 @@ public class PlayerListTemplate : ListBoxTemplateResource<PlayerObject> {
     protected override IRenderer renderer => Core.engine.renderer;
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
-    protected override string layoutName => "playerItem";
 
     public override void Preload() {
         base.Preload();
+        AddLayout("playerItem");
         AddElement<Text>("name");
     }
 

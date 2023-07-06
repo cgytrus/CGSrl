@@ -19,8 +19,6 @@ public class MainMenuScreen : LayoutResource, IScreen, IUpdatable {
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
 
-    protected override string layoutName => "mainMenu";
-
     private readonly Settings _settings;
 
     private ConnectionErrorDialogBoxScreen? _connectionErrorDialogBox;
@@ -29,8 +27,10 @@ public class MainMenuScreen : LayoutResource, IScreen, IUpdatable {
 
     public override void Preload() {
         base.Preload();
-        AddPath("frameLeft.text", $"{layoutsPath}/{layoutName}Left.txt");
-        AddPath("frameRight.text", $"{layoutsPath}/{layoutName}Right.txt");
+        AddLayout("mainMenu");
+
+        AddPath("frameLeft.text", $"{layoutsPath}/mainMenuLeft.txt");
+        AddPath("frameRight.text", $"{layoutsPath}/mainMenuRight.txt");
 
         AddElement<Text>("frameLeft");
         AddElement<Text>("frameRight");
