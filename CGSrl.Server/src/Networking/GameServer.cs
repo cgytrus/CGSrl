@@ -182,6 +182,8 @@ public class GameServer {
                 int prealloc = 1 + sizeof(int) + _level.objects.Count * SyncedLevelObject.PreallocSize;
                 NetOutgoingMessage hail = _peer.CreateMessage(prealloc);
                 hail.Write((byte)StcDataType.Joined);
+                hail.Write(_level.gameMode.GetType().AssemblyQualifiedName);
+                hail.Write(_level.chunkSize);
                 hail.Write(_level.objects.Count);
                 foreach(SyncedLevelObject obj in _level.objects.Values)
                     obj.WriteTo(hail);
@@ -238,6 +240,10 @@ public class GameServer {
     }
 
     private void ProcessAddObject(NetBuffer msg) {
+        if(!_level.gameMode.allowAddingObjects) {
+            logger.Warn("Game mode does not allow adding objects, ignoring add object!");
+            return;
+        }
         SyncedLevelObject obj = SyncedLevelObject.Read(msg);
         if(_level.objects.ContainsKey(obj.id)) {
             logger.Warn("Object {} (of type {}) already exists, ignoring add object!", obj.id, obj.GetType().Name);
@@ -247,6 +253,10 @@ public class GameServer {
     }
 
     private void ProcessRemoveObject(NetBuffer msg) {
+        if(!_level.gameMode.allowRemovingObjects) {
+            logger.Warn("Game mode does not allow removing objects, ignoring remove object!");
+            return;
+        }
         Guid id = msg.ReadGuid();
         if(!_level.objects.TryGetValue(id, out SyncedLevelObject? obj)) {
             logger.Warn("Object {} doesn't exist, ignoring remove object!", id);

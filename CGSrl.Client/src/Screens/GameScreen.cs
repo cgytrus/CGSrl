@@ -16,7 +16,7 @@ using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
 using PER.Abstractions.Screens;
-using PER.Common.Effects;
+using PER.Abstractions.UI;
 using PER.Util;
 
 using PRR.UI;
@@ -42,7 +42,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
 
     private readonly IResources _resources;
     private GameClient? _client;
-    private SyncedLevel? _level;
 
     private Text? _loadingTextCenter;
     private Text? _loadingTextBottom;
@@ -151,18 +150,9 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         GetElement<Button>("spawner.objects.redLight").onClick += (_, _) => _spawnerCurrent = typeof(RedLightObject);
         GetElement<Button>("spawner.objects.greenLight").onClick += (_, _) => _spawnerCurrent = typeof(GreenLightObject);
         GetElement<Button>("spawner.objects.blueLight").onClick += (_, _) => _spawnerCurrent = typeof(BlueLightObject);
+        ToggleSpawner(false);
 
-        _level = new SyncedLevel(true, renderer, input, audio, _resources, new Vector2Int(16, 16));
-        _level.objectAdded += obj => {
-            if(obj is PlayerObject player)
-                _players?.Add(player);
-        };
-        _level.objectRemoved += obj => {
-            if(obj is PlayerObject player)
-                _players?.Remove(player);
-        };
-
-        _client = new GameClient(_level, _messages);
+        _client = new GameClient(renderer, input, audio, _resources, _players, _messages);
         _client.onConnect += Connected;
         _client.onJoin += Joined;
         _client.onDisconnect += Disconnected;
@@ -172,7 +162,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         base.Unload(id);
         _client?.Finish();
         _client = null;
-        _level = null;
     }
 
     public void Connect(string address, string username, string displayName) {
@@ -210,6 +199,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     }
 
     private void Joined() {
+        ToggleSpawner(_client?.level?.gameMode.allowAddingObjects ?? false);
         _joining = false;
         if(_loadingTextCenter is null || _loadingProgressCenter is null ||
             _loadingTextBottom is null || _loadingProgressBottom is null)
@@ -221,11 +211,11 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     }
 
     private void Disconnected(string reason, bool isError) {
-        _level?.Reset();
         _players?.Clear();
         _messages?.Clear();
         _connecting = false;
         _joining = false;
+        ToggleSpawner(false);
         if(isError)
             SwitchToMainMenuWithError(reason);
         else
@@ -249,11 +239,17 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         _loadingProgressBottom.enabled = false;
     }
 
+    private void ToggleSpawner(bool enabled) {
+        foreach((string id, Element element) in elements)
+            if(id.StartsWith("spawner.", StringComparison.Ordinal))
+                element.enabled = enabled;
+    }
+
     public void Update(TimeSpan time) {
         bool prevBlock = input.block;
         bool block = (_chatInput?.typing ?? false) || _connecting || _joining;
 
-        if(_client is not null && _level is not null) {
+        if(_client is not null) {
             input.block = block;
             _client.ProcessMessages(Core.engine.updateInterval > TimeSpan.Zero ? Core.engine.updateInterval :
                 Core.engine.frameTime.averageFrameTime);
@@ -261,7 +257,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
             UpdateChatMessageList();
             UpdateInteractablePrompt();
             UpdateInfoText();
-            _level.Update(time);
+            _client.level?.Update(time);
             input.block = prevBlock;
         }
 
@@ -398,7 +394,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     }
 
     private void UpdateSpawner() {
-        if(_level is null || _client is null)
+        if(_client?.level is null)
             return;
 
         if(input.mousePosition is { x: >= 100, y: <= 10 })
@@ -407,10 +403,10 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         bool leftPressed = input.MouseButtonPressed(MouseButton.Left);
         bool rightPressed = input.MouseButtonPressed(MouseButton.Right);
 
-        if(!_prevLeftPressed && leftPressed &&
-            !_level.HasObjectAt(_level.ScreenToLevelPosition(input.mousePosition), _spawnerCurrent))
+        if(_client.level.gameMode.allowAddingObjects && !_prevLeftPressed && leftPressed &&
+            !_client.level.HasObjectAt(_client.level.ScreenToLevelPosition(input.mousePosition), _spawnerCurrent))
             CreateCurrentSpawnerObject();
-        if(!_prevRightPressed && rightPressed)
+        if(_client.level.gameMode.allowRemovingObjects && !_prevRightPressed && rightPressed)
             RemoveCurrentObject();
 
         _prevLeftPressed = leftPressed;
@@ -418,13 +414,13 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     }
 
     private void CreateCurrentSpawnerObject() {
-        if(_level is null || _client is null)
+        if(_client?.level is null)
             return;
 
         if(Activator.CreateInstance(_spawnerCurrent) is not SyncedLevelObject newObj)
             return;
 
-        newObj.position = _level.ScreenToLevelPosition(input.mousePosition);
+        newObj.position = _client.level.ScreenToLevelPosition(input.mousePosition);
 
         NetOutgoingMessage msg = _client.peer.CreateMessage(SyncedLevelObject.PreallocSize);
         msg.Write((byte)CtsDataType.AddObject);
@@ -433,8 +429,9 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     }
 
     private void RemoveCurrentObject() {
-        if(_client is null || _level is null ||
-            !_level.TryGetObjectAt(_level.ScreenToLevelPosition(input.mousePosition), out SyncedLevelObject? obj) &&
+        if(_client?.level is null ||
+            !_client.level.TryGetObjectAt(_client.level.ScreenToLevelPosition(input.mousePosition),
+                out SyncedLevelObject? obj) &&
             obj is not PlayerObject)
             return;
 
@@ -485,7 +482,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     }
 
     private void UpdateInteractablePrompt() {
-        if(_interactableText is null || _level is null)
+        if(_interactableText is null || _client?.level is null)
             return;
         switch(PlayerObject.currentInteractable) {
             case null:
@@ -494,19 +491,19 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
                 break;
             case SyncedLevelObject obj:
                 _interactableText.text = string.Format(_interactableFormat, PlayerObject.currentInteractable.prompt);
-                _interactableText.position = _level.LevelToScreenPosition(obj.position + new Vector2Int(1, -1));
+                _interactableText.position = _client.level.LevelToScreenPosition(obj.position + new Vector2Int(1, -1));
                 break;
         }
     }
 
     private void UpdateInfoText() {
-        if(_infoText is null || _level is null)
+        if(_infoText is null || _client?.level is null)
             return;
         _infoText.text = string.Format(_infoFormat,
             input.mousePosition,
-            _level.ScreenToCameraPosition(input.mousePosition),
-            _level.ScreenToLevelPosition(input.mousePosition),
-            _level.ScreenToChunkPosition(input.mousePosition));
+            _client.level.ScreenToCameraPosition(input.mousePosition),
+            _client.level.ScreenToLevelPosition(input.mousePosition),
+            _client.level.ScreenToChunkPosition(input.mousePosition));
     }
 
     private static void SwitchToMainMenuWithError(string error) {

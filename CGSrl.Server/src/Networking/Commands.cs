@@ -70,7 +70,7 @@ public class Commands {
             .Executes(context => {
                 if(!CheckServerPlayer(context))
                     return 1;
-                Game.SaveLevel(_level, "level.bin");
+                _level.Save("level.bin");
                 return 1;
             })), "Saves the level.");
 
@@ -78,7 +78,7 @@ public class Commands {
             .Executes(context => {
                 if(!CheckServerPlayer(context))
                     return 1;
-                Game.SaveLevel(_level, "wfc.bin");
+                _level.Save("wfc.bin");
                 return 1;
             })), "Saves the level for use with the Wave Function Collapse algorithm.");
 

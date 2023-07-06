@@ -3,10 +3,16 @@
 using CGSrl.Shared.Environment;
 using CGSrl.Shared.Networking;
 
+using JetBrains.Annotations;
+
 using Lidgren.Network;
 
 using NLog;
 
+using PER.Abstractions.Audio;
+using PER.Abstractions.Input;
+using PER.Abstractions.Rendering;
+using PER.Abstractions.Resources;
 using PER.Util;
 
 using PRR.UI;
@@ -16,7 +22,9 @@ namespace CGSrl.Client.Networking;
 public class GameClient {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
+    [PublicAPI]
     public string username { get; private set; } = "";
+    [PublicAPI]
     public string displayName { get; private set; } = "";
 
     public NetClient peer { get; }
@@ -28,7 +36,14 @@ public class GameClient {
     public int totalJoinedObjectCount { get; private set; }
     public int leftJoinedObjectCount { get; private set; }
 
-    private readonly SyncedLevel _level;
+    public SyncedLevel? level { get; private set; }
+
+    private readonly IRenderer _renderer;
+    private readonly IInput _input;
+    private readonly IAudio _audio;
+    private readonly IResources _resources;
+
+    private readonly ListBox<PlayerObject> _players;
     private readonly ListBox<ChatMessage> _messages;
 
     private readonly Stopwatch _timer = new();
@@ -37,8 +52,14 @@ public class GameClient {
 
     private Vector2Int _lastObjPosition;
 
-    public GameClient(SyncedLevel level, ListBox<ChatMessage> messages) {
-        _level = level;
+    public GameClient(IRenderer renderer, IInput input, IAudio audio, IResources resources,
+        ListBox<PlayerObject> players, ListBox<ChatMessage> messages) {
+        _renderer = renderer;
+        _input = input;
+        _audio = audio;
+        _resources = resources;
+
+        _players = players;
         _messages = messages;
 
         NetPeerConfiguration config = new("CGSrl");
@@ -94,9 +115,7 @@ public class GameClient {
             case NetIncomingMessageType.Data:
                 StcDataType type = (StcDataType)msg.ReadByte();
                 if(type == StcDataType.Joined) {
-                    leftJoinedObjectCount = msg.ReadInt32();
-                    totalJoinedObjectCount = leftJoinedObjectCount;
-                    _joinedMessage = msg;
+                    ProcessJoined(msg);
                     return;
                 }
                 ProcessData(type, msg);
@@ -135,6 +154,7 @@ public class GameClient {
             case NetConnectionStatus.Disconnected:
                 _joinedMessage = null;
                 onDisconnect?.Invoke(reason, reason != "Player left");
+                level = null;
                 logger.Info($"Disconnected ({reason})");
                 break;
         }
@@ -153,6 +173,35 @@ public class GameClient {
                 break;
         }
     }
+    private void ProcessJoined(NetIncomingMessage msg) {
+        Type? gameModeType = Type.GetType(msg.ReadString());
+        bool isGameModeType = false;
+        for(Type? baseType = gameModeType; baseType is not null; baseType = baseType.BaseType) {
+            if(baseType != typeof(SyncedGameMode))
+                continue;
+            isGameModeType = true;
+            break;
+        }
+        if(!isGameModeType || gameModeType is null ||
+            Activator.CreateInstance(gameModeType) is not SyncedGameMode gameMode) {
+            logger.Error("Game mode is kinda sus ngl.");
+            return;
+        }
+        Vector2Int chunkSize = msg.ReadVector2Int();
+        level = new SyncedLevel(true, _renderer, _input, _audio, _resources, chunkSize, gameMode);
+        level.objectAdded += obj => {
+            if(obj is PlayerObject player)
+                _players.Add(player);
+        };
+        level.objectRemoved += obj => {
+            if(obj is PlayerObject player)
+                _players.Remove(player);
+        };
+
+        leftJoinedObjectCount = msg.ReadInt32();
+        totalJoinedObjectCount = leftJoinedObjectCount;
+        _joinedMessage = msg;
+    }
 
     private void ProcessObjectsUpdated(NetIncomingMessage msg) {
         int addedCount = msg.ReadInt32();
@@ -169,15 +218,19 @@ public class GameClient {
     }
 
     private void ProcessObjectAdded(NetIncomingMessage msg) {
+        if(level is null) {
+            logger.Warn("Level was null, ignoring object added!");
+            return;
+        }
         SyncedLevelObject obj = SyncedLevelObject.Read(msg);
-        if(_level.objects.ContainsKey(obj.id)) {
+        if(level.objects.ContainsKey(obj.id)) {
             logger.Warn("Object {} (of type {}) already exists, ignoring object added!", obj.id, obj.GetType().Name);
             return;
         }
         // if we received a player and it's us, set its connection so it can send messages
         if(obj is PlayerObject player && player.username == username)
             player.connection = msg.SenderConnection;
-        _level.Add(obj);
+        level.Add(obj);
         if(obj is CorruptedObject) {
             obj.position = _lastObjPosition;
             string text = $"Received corrupted object, placing it at {obj.position}!";
@@ -185,36 +238,48 @@ public class GameClient {
             _messages.Insert(0, new ChatMessage(null, NetTime.Now, $"\f2{text}"));
         }
         _lastObjPosition = obj.position;
-        _level.CheckDirty(obj);
+        level.CheckDirty(obj);
     }
 
     private void ProcessObjectRemoved(NetBuffer msg) {
+        if(level is null) {
+            logger.Warn("Level was null, ignoring object removed!");
+            return;
+        }
         Guid id = msg.ReadGuid();
-        if(!_level.objects.ContainsKey(id)) {
+        if(!level.objects.ContainsKey(id)) {
             logger.Warn("Object {} doesn't exist, ignoring object removed!", id);
             return;
         }
-        _level.Remove(id);
+        level.Remove(id);
     }
 
     private void ProcessObjectChanged(NetBuffer msg) {
+        if(level is null) {
+            logger.Warn("Level was null, ignoring object changed!");
+            return;
+        }
         Guid id = msg.ReadGuid();
-        if(!_level.objects.TryGetValue(id, out SyncedLevelObject? obj)) {
+        if(!level.objects.TryGetValue(id, out SyncedLevelObject? obj)) {
             logger.Warn("Object {} doesn't exist, ignoring object changed!", id);
             return;
         }
         obj.ReadDynamicDataFrom(msg);
-        _level.CheckDirty(obj);
+        level.CheckDirty(obj);
     }
 
     private void ProcessChatMessage(NetIncomingMessage msg) {
+        if(level is null) {
+            logger.Warn("Level was null, ignoring chat message!");
+            return;
+        }
         Guid id = msg.ReadGuid();
         if(id == Guid.Empty) {
             _messages.Insert(0, new ChatMessage(null, msg.ReadTime(false), msg.ReadString()));
             logger.Info($"[CHAT] [SYSTEM] {_messages[0].text}");
             return;
         }
-        if(!_level.objects.TryGetValue(id, out SyncedLevelObject? obj)) {
+        if(!level.objects.TryGetValue(id, out SyncedLevelObject? obj)) {
             logger.Warn("Object {} doesn't exist, ignoring chat message!", id);
             return;
         }
