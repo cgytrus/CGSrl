@@ -55,7 +55,7 @@ public class MainMenuScreen : LayoutResource, IScreen, IUpdatable {
         InputField playDisplayName = GetElement<InputField>("play.displayName");
         GetElement<Button>("play").hotkey = KeyCode.Enter;
         GetElement<Button>("play").onClick += (_, _) => {
-            if(Core.engine.resources.TryGetResource(GameScreen.GlobalId, out GameScreen? screen))
+            if(Core.engine.resources.TryGetResource(ConnectingScreen.GlobalId, out ConnectingScreen? screen))
                 Core.engine.screens.SwitchScreen(screen, () => {
                     screen.Connect(playAddress.value ?? "", playUsername.value ?? "",
                         string.IsNullOrWhiteSpace(playDisplayName.value) ? playUsername.value ?? "" :

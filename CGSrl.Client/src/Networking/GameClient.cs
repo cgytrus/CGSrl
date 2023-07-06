@@ -9,6 +9,7 @@ using Lidgren.Network;
 
 using NLog;
 
+using PER.Abstractions;
 using PER.Abstractions.Audio;
 using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
@@ -19,7 +20,7 @@ using PRR.UI;
 
 namespace CGSrl.Client.Networking;
 
-public class GameClient {
+public class GameClient : IUpdatable {
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
     [PublicAPI]
@@ -33,34 +34,36 @@ public class GameClient {
     public event Action? onJoin;
     public event Action<string, bool>? onDisconnect;
 
-    public int totalJoinedObjectCount { get; private set; }
-    public int leftJoinedObjectCount { get; private set; }
-
     public SyncedLevel? level { get; private set; }
+
+    [PublicAPI]
+    public bool connecting { get; private set; }
+    public bool joining { get; private set; }
 
     private readonly IRenderer _renderer;
     private readonly IInput _input;
     private readonly IAudio _audio;
     private readonly IResources _resources;
 
-    private readonly ListBox<PlayerObject> _players;
-    private readonly ListBox<ChatMessage> _messages;
+    private Text? _loadingText;
+    private string _loadingTextFormat = "{0}";
+    private ProgressBar? _loadingProgress;
+    private ListBox<PlayerObject>? _players;
+    private ListBox<ChatMessage>? _messages;
 
     private readonly Stopwatch _timer = new();
 
     private NetIncomingMessage? _joinedMessage;
+    private int _totalJoinedObjectCount;
+    private int _remainingJoinedObjectCount;
 
     private Vector2Int _lastObjPosition;
 
-    public GameClient(IRenderer renderer, IInput input, IAudio audio, IResources resources,
-        ListBox<PlayerObject> players, ListBox<ChatMessage> messages) {
+    public GameClient(IRenderer renderer, IInput input, IAudio audio, IResources resources) {
         _renderer = renderer;
         _input = input;
         _audio = audio;
         _resources = resources;
-
-        _players = players;
-        _messages = messages;
 
         NetPeerConfiguration config = new("CGSrl");
         config.EnableMessageType(NetIncomingMessageType.StatusChanged);
@@ -68,6 +71,18 @@ public class GameClient {
 
         peer = new NetClient(config);
         peer.Start();
+    }
+
+    public void SetUi(Text loadingText, string loadingTextFormat, ProgressBar loadingProgress,
+        ListBox<PlayerObject>? players, ListBox<ChatMessage>? messages) {
+        _loadingText = loadingText;
+        _loadingTextFormat = loadingTextFormat;
+        _loadingProgress = loadingProgress;
+        _players = players;
+        _messages = messages;
+
+        loadingText.enabled = true;
+        loadingProgress.enabled = true;
     }
 
     public void Finish() {
@@ -81,6 +96,7 @@ public class GameClient {
         msg.Write(username);
         msg.Write(displayName);
         peer.Connect(host, port, msg);
+        connecting = true;
     }
 
     public void Disconnect() {
@@ -88,7 +104,93 @@ public class GameClient {
             peer.Disconnect("Player left");
     }
 
-    public void ProcessMessages(TimeSpan maxTime) {
+    public void Update(TimeSpan time) {
+        ProcessMessages(Core.engine.updateInterval > TimeSpan.Zero ? Core.engine.updateInterval :
+            Core.engine.frameTime.averageFrameTime);
+        if(connecting) {
+            UpdateConnectingProgress();
+            return;
+        }
+        if(joining) {
+            UpdateJoiningProgress();
+            return;
+        }
+        if(_loadingText is not null) {
+            _loadingText.text = "";
+            _loadingText.enabled = false;
+            _loadingText = null;
+        }
+        // ReSharper disable once InvertIf
+        if(_loadingProgress is not null) {
+            _loadingProgress.value = 0f;
+            _loadingProgress.enabled = false;
+            _loadingProgress = null;
+        }
+        UpdatePlayerList();
+        UpdateChatMessageList();
+    }
+
+    private void UpdateConnectingProgress() {
+        if(_loadingText is null || _loadingProgress is null)
+            return;
+        string text = peer.ConnectionStatus switch {
+            NetConnectionStatus.None or NetConnectionStatus.Disconnected => "Connecting...",
+            NetConnectionStatus.InitiatedConnect => "Waiting for response...",
+            NetConnectionStatus.ReceivedInitiation => "huh ????",
+            NetConnectionStatus.RespondedAwaitingApproval => "Waiting for approval...",
+            NetConnectionStatus.RespondedConnect => "huh 2 ???",
+            NetConnectionStatus.Connected => "Connected",
+            NetConnectionStatus.Disconnecting => "Disconnecting...",
+            _ => "Unknow..."
+        };
+        float progress = peer.ConnectionStatus switch {
+            NetConnectionStatus.None or NetConnectionStatus.Disconnected => 0f / 3f,
+            NetConnectionStatus.InitiatedConnect => 1f / 3f,
+            NetConnectionStatus.RespondedAwaitingApproval => 2f / 3f,
+            NetConnectionStatus.Connected => 3f / 3f,
+            _ => 0f
+        };
+        _loadingText.text = string.Format(_loadingTextFormat, text);
+        _loadingProgress.value = progress;
+    }
+
+    private void UpdateJoiningProgress() {
+        if(_loadingText is null || _loadingProgress is null)
+            return;
+        int received = _totalJoinedObjectCount - _remainingJoinedObjectCount;
+        int total = _totalJoinedObjectCount;
+        string text = $"Receiving objects... ({received}/{total})";
+        _loadingText.text = string.Format(_loadingTextFormat, text);
+        float progress = Math.Clamp(received / (float)total, 0f, 1f);
+        if(!float.IsNormal(progress))
+            progress = 0f;
+        _loadingProgress.value = progress;
+    }
+
+    private void UpdatePlayerList() {
+        if(_players is null)
+            return;
+        foreach(PlayerObject player in _players.items) {
+            if(player.text is not Text text) {
+                logger.Warn($"{player.username} doesnt have text????");
+                continue;
+            }
+            player.highlighted = _input.mousePosition.InBounds(text.bounds);
+            if(!player.pingDirty)
+                continue;
+            _players.UpdateItem(player);
+            player.pingDirty = false;
+        }
+    }
+
+    private void UpdateChatMessageList() {
+        if(_messages is null)
+            return;
+        foreach(ChatMessage message in _messages.items)
+            message.Update(_input, _messages);
+    }
+
+    private void ProcessMessages(TimeSpan maxTime) {
         if(_joinedMessage is not null) {
             AddJoinedObjects(maxTime);
             return;
@@ -131,33 +233,48 @@ public class GameClient {
         if(_joinedMessage is null)
             return;
         TimeSpan start = _timer.time;
-        while(leftJoinedObjectCount > 0 && (maxTime == TimeSpan.Zero || _timer.time - start < maxTime)) {
+        while(_remainingJoinedObjectCount > 0 && (maxTime == TimeSpan.Zero || _timer.time - start < maxTime)) {
             ProcessObjectAdded(_joinedMessage);
-            leftJoinedObjectCount--;
+            _remainingJoinedObjectCount--;
             if(maxTime == TimeSpan.Zero)
                 break;
         }
-        if(leftJoinedObjectCount > 0)
+        if(_remainingJoinedObjectCount > 0)
             return;
         peer.Recycle(_joinedMessage);
         _joinedMessage = null;
-        leftJoinedObjectCount = 0;
+        _remainingJoinedObjectCount = 0;
         onJoin?.Invoke();
+        joining = false;
     }
 
     private void ProcessStatusChanged(NetConnectionStatus status, string reason) {
         switch(status) {
             case NetConnectionStatus.Connected:
-                onConnect?.Invoke();
-                logger.Info("Connected");
+                ProcessConnected();
                 break;
             case NetConnectionStatus.Disconnected:
-                _joinedMessage = null;
-                onDisconnect?.Invoke(reason, reason != "Player left");
-                level = null;
-                logger.Info($"Disconnected ({reason})");
+                ProcessDisconnected(reason);
                 break;
         }
+    }
+
+    private void ProcessConnected() {
+        onConnect?.Invoke();
+        connecting = false;
+        joining = true;
+        logger.Info("Connected");
+    }
+
+    private void ProcessDisconnected(string reason) {
+        _joinedMessage = null;
+        _players?.Clear();
+        _messages?.Clear();
+        onDisconnect?.Invoke(reason, reason != "Player left");
+        connecting = false;
+        joining = false;
+        level = null;
+        logger.Info($"Disconnected ({reason})");
     }
 
     private void ProcessData(StcDataType type, NetIncomingMessage msg) {
@@ -191,15 +308,15 @@ public class GameClient {
         level = new SyncedLevel(true, _renderer, _input, _audio, _resources, chunkSize, gameMode);
         level.objectAdded += obj => {
             if(obj is PlayerObject player)
-                _players.Add(player);
+                _players?.Add(player);
         };
         level.objectRemoved += obj => {
             if(obj is PlayerObject player)
-                _players.Remove(player);
+                _players?.Remove(player);
         };
 
-        leftJoinedObjectCount = msg.ReadInt32();
-        totalJoinedObjectCount = leftJoinedObjectCount;
+        _totalJoinedObjectCount = msg.ReadInt32();
+        _remainingJoinedObjectCount = _totalJoinedObjectCount;
         _joinedMessage = msg;
     }
 
@@ -235,7 +352,7 @@ public class GameClient {
             obj.position = _lastObjPosition;
             string text = $"Received corrupted object, placing it at {obj.position}!";
             logger.Warn(text);
-            _messages.Insert(0, new ChatMessage(null, NetTime.Now, $"\f2{text}"));
+            _messages?.Insert(0, new ChatMessage(null, NetTime.Now, $"\f2{text}"));
         }
         _lastObjPosition = obj.position;
         level.CheckDirty(obj);
@@ -273,10 +390,12 @@ public class GameClient {
             logger.Warn("Level was null, ignoring chat message!");
             return;
         }
+        ChatMessage message;
         Guid id = msg.ReadGuid();
         if(id == Guid.Empty) {
-            _messages.Insert(0, new ChatMessage(null, msg.ReadTime(false), msg.ReadString()));
-            logger.Info($"[CHAT] [SYSTEM] {_messages[0].text}");
+            message = new ChatMessage(null, msg.ReadTime(false), msg.ReadString());
+            _messages?.Insert(0, message);
+            logger.Info($"[CHAT] [SYSTEM] {message.text}");
             return;
         }
         if(!level.objects.TryGetValue(id, out SyncedLevelObject? obj)) {
@@ -287,7 +406,8 @@ public class GameClient {
             logger.Warn("Object {} is not a player, ignoring chat message!", id);
             return;
         }
-        _messages.Insert(0, new ChatMessage(player, msg.ReadTime(false), msg.ReadString()));
-        logger.Info($"[CHAT] [{player.username}] {_messages[0].text}");
+        message = new ChatMessage(null, msg.ReadTime(false), msg.ReadString());
+        _messages?.Insert(0, message);
+        logger.Info($"[CHAT] [{player.username}] {message.text}");
     }
 }

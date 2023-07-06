@@ -8,8 +8,6 @@ using CGSrl.Shared.Networking;
 
 using Lidgren.Network;
 
-using NLog;
-
 using PER.Abstractions;
 using PER.Abstractions.Audio;
 using PER.Abstractions.Input;
@@ -29,26 +27,17 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
 
     private const int MaxMessageHistory = 100;
 
-    private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-
     protected override IRenderer renderer => Core.engine.renderer;
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
 
     protected override string layoutName => "game";
 
-    private bool _connecting;
-    private bool _joining;
-
-    private readonly IResources _resources;
     private GameClient? _client;
 
-    private Text? _loadingTextCenter;
-    private Text? _loadingTextBottom;
-    private ProgressBar? _loadingProgressCenter;
-    private ProgressBar? _loadingProgressBottom;
-    private string _loadingTextCenterFormat = "{0}";
-    private string _loadingTextBottomFormat = "{0}";
+    private Text? _loadingText;
+    private ProgressBar? _loadingProgress;
+    private string _loadingTextFormat = "{0}";
 
     private ListBox<PlayerObject>? _players;
     private ListBox<ChatMessage>? _messages;
@@ -72,7 +61,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     private bool _prevRightPressed;
 
     public GameScreen(IResources resources) {
-        _resources = resources;
         resources.TryAddResource(PlayerListTemplate.GlobalId, new PlayerListTemplate());
         resources.TryAddResource(ChatMessageListTemplate.GlobalId, new ChatMessageListTemplate());
         _spawnerCurrent = typeof(WallObject);
@@ -83,10 +71,8 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         AddDependency<PlayerListTemplate>(PlayerListTemplate.GlobalId);
         AddDependency<ChatMessageListTemplate>(ChatMessageListTemplate.GlobalId);
 
-        AddElement<ProgressBar>("loading.progress.center");
-        AddElement<Text>("loading.text.center");
-        AddElement<ProgressBar>("loading.progress.bottom");
-        AddElement<Text>("loading.text.bottom");
+        AddElement<ProgressBar>("loading.progress");
+        AddElement<Text>("loading.text");
         AddElement<ListBox<PlayerObject>>("players");
         AddElement<ListBox<ChatMessage>>("chat.messages");
         AddElement<InputField>("chat.input");
@@ -108,18 +94,10 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
     public override void Load(string id) {
         base.Load(id);
 
-        _loadingTextCenter = GetElement<Text>("loading.text.center");
-        _loadingTextBottom = GetElement<Text>("loading.text.bottom");
-        _loadingProgressCenter = GetElement<ProgressBar>("loading.progress.center");
-        _loadingProgressBottom = GetElement<ProgressBar>("loading.progress.bottom");
+        _loadingText = GetElement<Text>("loading.text");
+        _loadingProgress = GetElement<ProgressBar>("loading.progress");
 
-        _loadingTextCenter.enabled = false;
-        _loadingProgressCenter.enabled = false;
-        _loadingTextBottom.enabled = false;
-        _loadingProgressBottom.enabled = false;
-
-        _loadingTextCenterFormat = _loadingTextCenter.text ?? _loadingTextCenterFormat;
-        _loadingTextBottomFormat = _loadingTextBottom.text ?? _loadingTextBottomFormat;
+        _loadingTextFormat = _loadingText.text ?? _loadingTextFormat;
 
         _players = GetElement<ListBox<PlayerObject>>("players");
         _messages = GetElement<ListBox<ChatMessage>>("chat.messages");
@@ -151,92 +129,26 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         GetElement<Button>("spawner.objects.greenLight").onClick += (_, _) => _spawnerCurrent = typeof(GreenLightObject);
         GetElement<Button>("spawner.objects.blueLight").onClick += (_, _) => _spawnerCurrent = typeof(BlueLightObject);
         ToggleSpawner(false);
-
-        _client = new GameClient(renderer, input, audio, _resources, _players, _messages);
-        _client.onConnect += Connected;
-        _client.onJoin += Joined;
-        _client.onDisconnect += Disconnected;
     }
 
-    public override void Unload(string id) {
-        base.Unload(id);
-        _client?.Finish();
-        _client = null;
+    public void ContinueConnect(GameClient client) {
+        _client = client;
+        client.onJoin += Joined;
+        client.onDisconnect += Disconnected;
+        if(_loadingText is not null && _loadingProgress is not null)
+            client.SetUi(_loadingText, _loadingTextFormat, _loadingProgress, _players, _messages);
     }
 
-    public void Connect(string address, string username, string displayName) {
+    private void Joined() => ToggleSpawner(_client?.level?.gameMode.allowAddingObjects ?? false);
+
+    private void Disconnected(string reason, bool isError) => ToggleSpawner(false);
+
+    public void Open() { }
+    public void Close() {
         if(_client is null)
             return;
-
-        string host = "127.0.0.1";
-        int port = 12420;
-        if(address.Length > 0) {
-            string[] parts = address.Split(':');
-            host = parts[0];
-            if(parts.Length >= 2 && int.TryParse(parts[1], out int parsedPort))
-                port = parsedPort;
-        }
-
-        if(_loadingTextCenter is not null)
-            _loadingTextCenter.enabled = true;
-        if(_loadingProgressCenter is not null)
-            _loadingProgressCenter.enabled = true;
-
-        _client.Connect(host, port, username, displayName);
-        _connecting = true;
-    }
-
-    private void Connected() {
-        _connecting = false;
-        _joining = true;
-        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
-            _loadingTextBottom is null || _loadingProgressBottom is null)
-            return;
-        _loadingTextCenter.enabled = false;
-        _loadingProgressCenter.enabled = false;
-        _loadingTextBottom.enabled = true;
-        _loadingProgressBottom.enabled = true;
-    }
-
-    private void Joined() {
-        ToggleSpawner(_client?.level?.gameMode.allowAddingObjects ?? false);
-        _joining = false;
-        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
-            _loadingTextBottom is null || _loadingProgressBottom is null)
-            return;
-        _loadingTextCenter.enabled = false;
-        _loadingProgressCenter.enabled = false;
-        _loadingTextBottom.enabled = false;
-        _loadingProgressBottom.enabled = false;
-    }
-
-    private void Disconnected(string reason, bool isError) {
-        _players?.Clear();
-        _messages?.Clear();
-        _connecting = false;
-        _joining = false;
-        ToggleSpawner(false);
-        if(isError)
-            SwitchToMainMenuWithError(reason);
-        else
-            SwitchToMainMenu();
-    }
-
-    public void Open() {
-        if(_loadingProgressCenter is null || _loadingProgressBottom is null)
-            return;
-        _loadingProgressCenter.value = 0f;
-        _loadingProgressBottom.value = 0f;
-    }
-
-    public void Close() {
-        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
-            _loadingTextBottom is null || _loadingProgressBottom is null)
-            return;
-        _loadingTextCenter.enabled = false;
-        _loadingProgressCenter.enabled = false;
-        _loadingTextBottom.enabled = false;
-        _loadingProgressBottom.enabled = false;
+        _client.onJoin -= Joined;
+        _client.onDisconnect -= Disconnected;
     }
 
     private void ToggleSpawner(bool enabled) {
@@ -247,75 +159,22 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
 
     public void Update(TimeSpan time) {
         bool prevBlock = input.block;
-        bool block = (_chatInput?.typing ?? false) || _connecting || _joining;
+        bool block = (_chatInput?.typing ?? false) || _client is not null && _client.joining;
 
         if(_client is not null) {
             input.block = block;
-            _client.ProcessMessages(Core.engine.updateInterval > TimeSpan.Zero ? Core.engine.updateInterval :
-                Core.engine.frameTime.averageFrameTime);
-            UpdatePlayerList();
-            UpdateChatMessageList();
+            _client.Update(time);
             UpdateInteractablePrompt();
             UpdateInfoText();
             _client.level?.Update(time);
             input.block = prevBlock;
         }
 
-        if(_connecting)
-            UpdateConnectingProgress();
-        else if(_joining)
-            UpdateJoiningProgress();
-
         // ReSharper disable once ForCanBeConvertedToForeach
         for(int i = 0; i < elementList.Count; i++)
             elementList[i].Update(time);
 
         UpdateInput(block);
-    }
-
-    private void UpdateConnectingProgress() {
-        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
-            _loadingTextBottom is null || _loadingProgressBottom is null ||
-            _client is null)
-            return;
-        string text = _client.peer.ConnectionStatus switch {
-            NetConnectionStatus.None or NetConnectionStatus.Disconnected => "Connecting...",
-            NetConnectionStatus.InitiatedConnect => "Waiting for response...",
-            NetConnectionStatus.ReceivedInitiation => "huh ????",
-            NetConnectionStatus.RespondedAwaitingApproval => "Waiting for approval...",
-            NetConnectionStatus.RespondedConnect => "huh 2 ???",
-            NetConnectionStatus.Connected => "Connected",
-            NetConnectionStatus.Disconnecting => "Disconnecting...",
-            _ => "Unknow..."
-        };
-        float progress = _client.peer.ConnectionStatus switch {
-            NetConnectionStatus.None or NetConnectionStatus.Disconnected => 0f / 3f,
-            NetConnectionStatus.InitiatedConnect => 1f / 3f,
-            NetConnectionStatus.RespondedAwaitingApproval => 2f / 3f,
-            NetConnectionStatus.Connected => 3f / 3f,
-            _ => 0f
-        };
-        _loadingTextCenter.text = string.Format(_loadingTextCenterFormat, text);
-        _loadingTextBottom.text = string.Format(_loadingTextBottomFormat, text);
-        _loadingProgressCenter.value = progress;
-        _loadingProgressBottom.value = progress;
-    }
-
-    private void UpdateJoiningProgress() {
-        if(_loadingTextCenter is null || _loadingProgressCenter is null ||
-            _loadingTextBottom is null || _loadingProgressBottom is null ||
-            _client is null)
-            return;
-        int received = _client.totalJoinedObjectCount - _client.leftJoinedObjectCount;
-        int total = _client.totalJoinedObjectCount;
-        string text = $"Receiving objects... ({received}/{total})";
-        _loadingTextCenter.text = string.Format(_loadingTextCenterFormat, text);
-        _loadingTextBottom.text = string.Format(_loadingTextBottomFormat, text);
-        float progress = Math.Clamp(received / (float)total, 0f, 1f);
-        if(!float.IsNormal(progress))
-            progress = 0f;
-        _loadingProgressCenter.value = progress;
-        _loadingProgressBottom.value = progress;
     }
 
     private void UpdateInput(bool block) {
@@ -332,7 +191,7 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
 
         UpdateExitHotkey();
 
-        if(_connecting || _joining)
+        if(_client is not null && _client.joining)
             return;
 
         UpdateChatHotkey();
@@ -377,12 +236,8 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
 
     private void UpdateExitHotkey() {
         bool escapePressed = input.KeyPressed(KeyCode.Escape);
-        if(!_prevEscapePressed && escapePressed) {
-            if(_client is null)
-                SwitchToMainMenu();
-            else
-                _client.Disconnect();
-        }
+        if(!_prevEscapePressed && escapePressed)
+            _client?.Disconnect();
         _prevEscapePressed = escapePressed;
     }
 
@@ -441,29 +296,6 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
         _client.peer.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
     }
 
-    private void UpdatePlayerList() {
-        if(_players is null)
-            return;
-        foreach(PlayerObject player in _players.items) {
-            if(player.text is not Text text) {
-                logger.Warn($"{player.username} doesnt have text????");
-                continue;
-            }
-            player.highlighted = input.mousePosition.InBounds(text.bounds);
-            if(!player.pingDirty)
-                continue;
-            _players.UpdateItem(player);
-            player.pingDirty = false;
-        }
-    }
-
-    private void UpdateChatMessageList() {
-        if(_messages is null)
-            return;
-        foreach(ChatMessage message in _messages.items)
-            message.Update(input, _messages);
-    }
-
     private void SendChatMessage() {
         if(_client is null || _chatInput is null || string.IsNullOrEmpty(_chatInput.value))
             return;
@@ -504,18 +336,5 @@ public class GameScreen : LayoutResource, IScreen, IUpdatable {
             _client.level.ScreenToCameraPosition(input.mousePosition),
             _client.level.ScreenToLevelPosition(input.mousePosition),
             _client.level.ScreenToChunkPosition(input.mousePosition));
-    }
-
-    private static void SwitchToMainMenuWithError(string error) {
-        if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
-            Core.engine.screens.SwitchScreen(screen, () => {
-                screen.ShowConnectionError(error);
-                return true;
-            });
-    }
-
-    private static void SwitchToMainMenu() {
-        if(Core.engine.resources.TryGetResource(MainMenuScreen.GlobalId, out MainMenuScreen? screen))
-            Core.engine.screens.SwitchScreen(screen);
     }
 }

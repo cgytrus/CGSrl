@@ -1,0 +1,11 @@
+{
+    "progress": {
+        "position": { "x": 55, "y": 34 },
+        "size": { "x": 16, "y": 1 }
+    },
+    "text": {
+        "position": { "x": 63, "y": 32 },
+        "align": "middle",
+        "text": "{0}"
+    }
+}
