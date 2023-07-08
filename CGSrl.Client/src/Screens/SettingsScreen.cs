@@ -56,8 +56,8 @@ public class SettingsScreen : LayoutResource, IScreen, IUpdatable {
 
         AddLayout("settings");
 
-        AddPath("frameLeft.text", $"{layoutsPath}/mainMenuLeft.txt");
-        AddPath("frameRight.text", $"{layoutsPath}/mainMenuRight.txt");
+        AddPath("frameLeft.text", $"{layoutsPath}/settingsLeft.txt");
+        AddPath("frameRight.text", $"{layoutsPath}/settingsRight.txt");
 
         AddElement<Text>("frameLeft");
         AddElement<Text>("frameRight");
