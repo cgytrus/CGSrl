@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 using CGSrl.Shared.Environment;
 using CGSrl.Shared.Networking;
@@ -83,6 +84,12 @@ public class GameClient : IUpdatable {
 
         loadingText.enabled = true;
         loadingProgress.enabled = true;
+
+        if(players is null || level is null)
+            return;
+        players.Clear();
+        foreach(PlayerObject player in level.objects.OfType<PlayerObject>())
+            players.Add(player);
     }
 
     public void Finish() {
@@ -406,7 +413,7 @@ public class GameClient : IUpdatable {
             logger.Warn("Object {} is not a player, ignoring chat message!", id);
             return;
         }
-        message = new ChatMessage(null, msg.ReadTime(false), msg.ReadString());
+        message = new ChatMessage(player, msg.ReadTime(false), msg.ReadString());
         _messages?.Insert(0, message);
         logger.Info($"[CHAT] [{player.username}] {message.text}");
     }
