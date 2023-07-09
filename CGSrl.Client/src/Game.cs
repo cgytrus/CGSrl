@@ -114,7 +114,8 @@ public class Game : IGame, ISetupable, IUpdatable {
             renderer.AddEffect(_drawTextEffect);
         if(_settings.bloom && _bloomEffect is not null)
             renderer.AddEffect(_bloomEffect);
-        _frameTimeDisplay?.Update(time);
+        if(_settings.showFps)
+            _frameTimeDisplay?.Update(time);
     }
 
     public void Finish() { }
