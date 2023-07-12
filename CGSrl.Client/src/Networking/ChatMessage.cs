@@ -1,4 +1,6 @@
-﻿using CGSrl.Shared.Environment;
+﻿using System;
+
+using CGSrl.Shared.Environment;
 
 using Lidgren.Network;
 
@@ -27,9 +29,10 @@ public class ChatMessage {
 
     private readonly double _time;
 
-    public void Update(IInput input, ListBox<ChatMessage> messages) {
+    public void Update(TimeSpan time, IInput input, ListBox<ChatMessage> messages) {
         if(element is null || fade is null)
             return;
+        fade.Update(time);
         if(player is not null && !player.highlighted)
             player.highlighted = input.mousePosition.InBounds(messages.bounds) &&
                 input.mousePosition.InBounds(element.bounds);

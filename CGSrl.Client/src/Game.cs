@@ -11,7 +11,6 @@ using PER.Common.Effects;
 using PER.Common.Resources;
 using PER.Util;
 
-using PRR.Resources;
 using PRR.UI.Resources;
 
 namespace CGSrl.Client;

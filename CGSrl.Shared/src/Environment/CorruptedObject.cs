@@ -9,6 +9,6 @@ namespace CGSrl.Shared.Environment;
 public class CorruptedObject : SyncedLevelObject {
     public override int layer => int.MaxValue;
     public override RenderCharacter character { get; } = new('\0', Color.white, Color.transparent);
-    public override IDisplayEffect? effect => renderer.formattingEffects["glitch"];
+    public override IEffect? effect => renderer.formattingEffects["glitch"];
     public override bool blocksLight => false;
 }

@@ -134,7 +134,7 @@ public class GameClient : IUpdatable {
             _loadingProgress = null;
         }
         UpdatePlayerList();
-        UpdateChatMessageList();
+        UpdateChatMessageList(time);
     }
 
     private void UpdateConnectingProgress() {
@@ -190,11 +190,11 @@ public class GameClient : IUpdatable {
         }
     }
 
-    private void UpdateChatMessageList() {
+    private void UpdateChatMessageList(TimeSpan time) {
         if(_messages is null)
             return;
-        foreach(ChatMessage message in _messages.items)
-            message.Update(_input, _messages);
+        for(int i = _messages.items.Count - 1; i >= 0; i--)
+            _messages.items[i].Update(time, _input, _messages);
     }
 
     private void ProcessMessages(TimeSpan maxTime) {
