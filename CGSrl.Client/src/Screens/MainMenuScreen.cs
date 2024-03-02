@@ -12,18 +12,14 @@ using PRR.UI.Resources;
 
 namespace CGSrl.Client.Screens;
 
-public class MainMenuScreen : LayoutResource, IScreen, IUpdatable {
+public class MainMenuScreen(Settings settings) : LayoutResource, IScreen, IUpdatable {
     public const string GlobalId = "layouts/mainMenu";
 
     protected override IRenderer renderer => Core.engine.renderer;
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
 
-    private readonly Settings _settings;
-
     private ConnectionErrorDialogBoxScreen? _connectionErrorDialogBox;
-
-    public MainMenuScreen(Settings settings) => _settings = settings;
 
     public override void Preload() {
         base.Preload();
@@ -64,12 +60,12 @@ public class MainMenuScreen : LayoutResource, IScreen, IUpdatable {
                 });
         };
 
-        playAddress.onSubmit += (_, _) => _settings.address = playAddress.value ?? "";
-        playAddress.onCancel += (_, _) => _settings.address = playAddress.value ?? "";
-        playUsername.onSubmit += (_, _) => _settings.username = playUsername.value ?? "";
-        playUsername.onCancel += (_, _) => _settings.username = playUsername.value ?? "";
-        playDisplayName.onSubmit += (_, _) => _settings.displayName = playDisplayName.value ?? "";
-        playDisplayName.onCancel += (_, _) => _settings.displayName = playDisplayName.value ?? "";
+        playAddress.onSubmit += (_, _) => settings.address = playAddress.value ?? "";
+        playAddress.onCancel += (_, _) => settings.address = playAddress.value ?? "";
+        playUsername.onSubmit += (_, _) => settings.username = playUsername.value ?? "";
+        playUsername.onCancel += (_, _) => settings.username = playUsername.value ?? "";
+        playDisplayName.onSubmit += (_, _) => settings.displayName = playDisplayName.value ?? "";
+        playDisplayName.onCancel += (_, _) => settings.displayName = playDisplayName.value ?? "";
 
         GetElement<Button>("settings").onClick += (_, _) => {
             if(Core.engine.resources.TryGetResource(SettingsScreen.GlobalId, out SettingsScreen? screen))
@@ -99,9 +95,9 @@ public class MainMenuScreen : LayoutResource, IScreen, IUpdatable {
     }
 
     public void Open() {
-        GetElement<InputField>("play.address").value = _settings.address;
-        GetElement<InputField>("play.username").value = _settings.username;
-        GetElement<InputField>("play.displayName").value = _settings.displayName;
+        GetElement<InputField>("play.address").value = settings.address;
+        GetElement<InputField>("play.username").value = settings.username;
+        GetElement<InputField>("play.displayName").value = settings.displayName;
     }
 
     public void Close() { }

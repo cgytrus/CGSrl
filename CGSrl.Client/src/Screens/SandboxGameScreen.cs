@@ -14,7 +14,7 @@ using PRR.UI;
 
 namespace CGSrl.Client.Screens;
 
-public class SandboxGameScreen : GameScreen {
+public class SandboxGameScreen(IResources resources) : GameScreen(resources) {
     public const string GlobalId = "layouts/game/sandbox";
 
     protected override IRenderer renderer => Core.engine.renderer;
@@ -24,12 +24,10 @@ public class SandboxGameScreen : GameScreen {
     private Text? _infoText;
     private string _infoFormat = "{0} {1} {2}";
 
-    private Type _spawnerCurrent;
+    private Type _spawnerCurrent = typeof(WallObject);
 
     private bool _prevLeftPressed;
     private bool _prevRightPressed;
-
-    public SandboxGameScreen(IResources resources) : base(resources) => _spawnerCurrent = typeof(WallObject);
 
     public override void Preload() {
         base.Preload();

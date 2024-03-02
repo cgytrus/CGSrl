@@ -16,14 +16,13 @@ using PRR.UI.Resources;
 
 namespace CGSrl.Client.Screens;
 
-public class ConnectingScreen : LayoutResource, IScreen, IUpdatable {
+public class ConnectingScreen(IResources resources) : LayoutResource, IScreen, IUpdatable {
     public const string GlobalId = "layouts/connecting";
 
     protected override IRenderer renderer => Core.engine.renderer;
     protected override IInput input => Core.engine.input;
     protected override IAudio audio => Core.engine.audio;
 
-    private readonly IResources _resources;
     private GameClient? _client;
 
     private bool _connected;
@@ -31,8 +30,6 @@ public class ConnectingScreen : LayoutResource, IScreen, IUpdatable {
     private Text? _text;
     private ProgressBar? _progress;
     private string _textFormat = "{0}";
-
-    public ConnectingScreen(IResources resources) => _resources = resources;
 
     public override void Preload() {
         base.Preload();
@@ -53,7 +50,7 @@ public class ConnectingScreen : LayoutResource, IScreen, IUpdatable {
 
         _textFormat = _text.text ?? _textFormat;
 
-        _client = new GameClient(renderer, input, audio, _resources);
+        _client = new GameClient(renderer, input, audio, resources);
         _client.onConnect += Connected;
         _client.onDisconnect += Disconnected;
     }

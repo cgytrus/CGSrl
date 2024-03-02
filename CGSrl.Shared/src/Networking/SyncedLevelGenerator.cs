@@ -2,6 +2,5 @@
 
 namespace CGSrl.Shared.Networking;
 
-public abstract class SyncedLevelGenerator : LevelGenerator<SyncedLevel, SyncedChunk, SyncedLevelObject> {
-    protected SyncedLevelGenerator(SyncedLevel level) : base(level) { }
-}
+public abstract class SyncedLevelGenerator(SyncedLevel level)
+    : LevelGenerator<SyncedLevel, SyncedChunk, SyncedLevelObject>(level);

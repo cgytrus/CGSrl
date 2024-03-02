@@ -11,7 +11,7 @@ using PRR.UI.Screens;
 
 namespace CGSrl.Client.Screens;
 
-public class ConnectionErrorDialogBoxScreen : DialogBoxScreenResource {
+public class ConnectionErrorDialogBoxScreen() : DialogBoxScreenResource(new Vector2Int(72, 18)) {
     public const string GlobalId = "layouts/connectionErrorDialog";
 
     public Action? onOk { get; set; }
@@ -24,8 +24,6 @@ public class ConnectionErrorDialogBoxScreen : DialogBoxScreenResource {
     public string text { get; set; } = "";
 
     private string _formatStr = "{0}";
-
-    public ConnectionErrorDialogBoxScreen() : base(new Vector2Int(72, 18)) { }
 
     public override void Preload() {
         base.Preload();
