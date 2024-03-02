@@ -11,7 +11,7 @@ public class GrassObject : InteractableObject {
     public override string prompt => "touch";
 
     public override int layer => -1;
-    public override RenderCharacter character { get; } = new('"', Color.transparent, new Color(0f, 0.4f, 0f, 1f));
+    public override RenderCharacter character { get; } = new('"', Color.transparent, new Color(0f, 0.4f, 0f));
     public override bool blocksLight => false;
 
     protected override void OnInteract(PlayerObject player) {

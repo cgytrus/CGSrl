@@ -2,4 +2,4 @@
 
 namespace CGSrl.Shared.Networking;
 
-public abstract class SyncedGameMode : GameMode<SyncedLevel, SyncedChunk, SyncedLevelObject> { }
+public abstract class SyncedGameMode : GameMode<SyncedLevel, SyncedChunk, SyncedLevelObject>;

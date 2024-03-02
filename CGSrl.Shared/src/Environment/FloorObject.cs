@@ -25,6 +25,6 @@ public class FloorObject : SyncedLevelObject, IAddable {
         if(!level.isClient)
             return;
         float p = noise.GetNoise(MathF.Abs(position.x), MathF.Abs(position.y)) * PerlinValue;
-        _character = new RenderCharacter('.', Color.transparent, new Color(0.1f + p, 0.1f + p, 0.1f + p, 1f));
+        _character = new RenderCharacter('.', Color.transparent, new Color(0.1f + p, 0.1f + p, 0.1f + p));
     }
 }

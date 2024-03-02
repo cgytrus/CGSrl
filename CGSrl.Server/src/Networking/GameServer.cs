@@ -84,7 +84,7 @@ public class GameServer {
 
     public void ProcessMessages() {
         ProcessObjectUpdates();
-        while(_peer.ReadMessage(out NetIncomingMessage msg)) {
+        while(_peer.ReadMessage(out NetIncomingMessage? msg)) {
             switch(msg.MessageType) {
                 case NetIncomingMessageType.WarningMessage:
                     logger.Warn(msg.ReadString);
@@ -142,7 +142,7 @@ public class GameServer {
     }
 
     private void ProcessConnectionApproval(NetIncomingMessage msg) {
-        NetConnection connection = msg.SenderConnection;
+        NetConnection connection = msg.SenderConnection!;
         string username = msg.ReadString();
         string displayName = msg.ReadString();
         if(string.IsNullOrEmpty(username)) {
@@ -171,10 +171,10 @@ public class GameServer {
         SendChatMessage(null, null, $"\f1{displayName} is joining the game");
     }
 
-    private void ProcessStatusChanged(NetConnectionStatus status, string reason, NetConnection connection) {
+    private void ProcessStatusChanged(NetConnectionStatus status, string reason, NetConnection? connection) {
         switch(status) {
             case NetConnectionStatus.Connected: {
-                if(connection.Tag is not PlayerObject player) {
+                if(connection?.Tag is not PlayerObject player) {
                     logger.Warn("Tag was not player, ignoring connect!");
                     return;
                 }
@@ -196,7 +196,7 @@ public class GameServer {
                 break;
             }
             case NetConnectionStatus.Disconnected: {
-                if(connection.Tag is not PlayerObject player) {
+                if(connection?.Tag is not PlayerObject player) {
                     logger.Warn("Tag was not player, ignoring disconnect!");
                     return;
                 }
@@ -208,8 +208,8 @@ public class GameServer {
         }
     }
 
-    private static void ProcessConnectionLatencyUpdated(NetConnection connection, float roundTripTime) {
-        if(connection.Tag is not PlayerObject player) {
+    private static void ProcessConnectionLatencyUpdated(NetConnection? connection, float roundTripTime) {
+        if(connection?.Tag is not PlayerObject player) {
             logger.Warn("Tag was not player, ignoring ping update!");
             return;
         }
@@ -270,7 +270,7 @@ public class GameServer {
     }
 
     private static void ProcessPlayerMove(NetIncomingMessage msg) {
-        if(msg.SenderConnection.Tag is not PlayerObject player) {
+        if(msg.SenderConnection?.Tag is not PlayerObject player) {
             logger.Warn("Tag was not player, ignoring player move!");
             return;
         }
@@ -278,7 +278,7 @@ public class GameServer {
     }
 
     private void ProcessPlayerInteract(NetIncomingMessage msg) {
-        if(msg.SenderConnection.Tag is not PlayerObject player) {
+        if(msg.SenderConnection?.Tag is not PlayerObject player) {
             logger.Warn("Tag was not player, ignoring player interact!");
             return;
         }
@@ -295,7 +295,7 @@ public class GameServer {
     }
 
     private void ProcessChatMessage(NetIncomingMessage msg) {
-        if(msg.SenderConnection.Tag is not PlayerObject player) {
+        if(msg.SenderConnection?.Tag is not PlayerObject player) {
             logger.Warn("Tag was not player, ignoring chat message!");
             return;
         }

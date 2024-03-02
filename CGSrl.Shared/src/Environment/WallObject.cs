@@ -7,7 +7,7 @@ public class WallObject : MovableObject {
     public class Broken : MovableObject {
         public override int layer => -2;
         public override RenderCharacter character { get; } =
-            new('%', Color.transparent, new Color(0.5f, 0.5f, 0.5f, 1f));
+            new('%', Color.transparent, new Color(0.5f, 0.5f, 0.5f));
         public override bool blocksLight => false;
         protected override bool canPush => true;
         protected override float mass => 8f;

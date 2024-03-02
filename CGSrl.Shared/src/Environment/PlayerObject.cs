@@ -15,7 +15,7 @@ namespace CGSrl.Shared.Environment;
 public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     public override int layer => 0;
     public override RenderCharacter character => new('@',
-        highlighted ? new Color(1f, 1f, 0f, 0.2f) : Color.transparent, new Color(0, 255, 255, 255));
+        highlighted ? new Color(1f, 1f, 0f, 0.2f) : Color.transparent, new Color(0, 255, 255));
     public override bool blocksLight => false;
 
     protected override bool canPush => true;
@@ -86,6 +86,7 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     }
 
     private void UpdateInteraction() {
+        RequireClient();
         Vector2Int mouse = level.ScreenToLevelPosition(input.mousePosition);
         Vector2Int relativeMouse = mouse - position;
         float mouseDistSqr = new Vector2(relativeMouse.x, relativeMouse.y).LengthSquared();
@@ -105,6 +106,7 @@ public class PlayerObject : MovableObject, IUpdatable, IMovable, ILight {
     private void UpdateMovement() {
         if(connection is null)
             return;
+        RequireClient();
         int moveX = 0;
         int moveY = 0;
         if(input.KeyPressed(KeyCode.D))

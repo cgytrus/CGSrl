@@ -89,7 +89,7 @@ public class GameClient : IUpdatable {
         if(players is null || level is null)
             return;
         players.Clear();
-        foreach(PlayerObject player in level.objects.OfType<PlayerObject>())
+        foreach(PlayerObject player in level.objects.Values.OfType<PlayerObject>())
             players.Add(player);
     }
 
@@ -204,7 +204,7 @@ public class GameClient : IUpdatable {
             return;
         }
         TimeSpan start = _timer.time;
-        while(peer.ReadMessage(out NetIncomingMessage msg)) {
+        while(peer.ReadMessage(out NetIncomingMessage? msg)) {
             ProcessMessage(msg);
             if(_timer.time - start > maxTime)
                 break;
