@@ -6,10 +6,7 @@ using Lidgren.Network;
 using NLog;
 
 using PER.Abstractions;
-using PER.Abstractions.Audio;
 using PER.Abstractions.Environment;
-using PER.Abstractions.Input;
-using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
 using PER.Util;
 
@@ -20,20 +17,18 @@ public class SyncedLevel : Level<SyncedLevel, SyncedChunk, SyncedLevelObject> {
 
     protected override TimeSpan maxGenerationTime { get; }
 
-    public bool isClient { get; }
     public GameMode<SyncedLevel, SyncedChunk, SyncedLevelObject> gameMode { get; }
 
-    public SyncedLevel(bool isClient, IRenderer renderer, IInput input, IAudio audio, IResources resources,
+    public SyncedLevel(LevelClientData? client, IResources resources,
         Vector2Int chunkSize, GameMode<SyncedLevel, SyncedChunk, SyncedLevelObject> gameMode) :
-        base(renderer, input, audio, resources, chunkSize) {
-        this.isClient = isClient;
+        base(client, resources, chunkSize) {
         this.gameMode = gameMode;
         gameMode.SetLevel(this);
     }
 
-    public SyncedLevel(bool isClient, IRenderer renderer, IInput input, IAudio audio, IResources resources,
+    public SyncedLevel(LevelClientData? client, IResources resources,
         Vector2Int chunkSize, GameMode<SyncedLevel, SyncedChunk, SyncedLevelObject> gameMode,
-        TimeSpan maxGenerationTime) : this(isClient, renderer, input, audio, resources, chunkSize, gameMode) =>
+        TimeSpan maxGenerationTime) : this(client, resources, chunkSize, gameMode) =>
         this.maxGenerationTime = maxGenerationTime;
 
     protected override void GenerateChunk(Vector2Int start) => gameMode.GenerateChunk(start);

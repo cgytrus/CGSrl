@@ -12,6 +12,7 @@ using NLog;
 
 using PER.Abstractions;
 using PER.Abstractions.Audio;
+using PER.Abstractions.Environment;
 using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
@@ -312,7 +313,7 @@ public class GameClient : IUpdatable {
             return;
         }
         Vector2Int chunkSize = msg.ReadVector2Int();
-        level = new SyncedLevel(true, _renderer, _input, _audio, _resources, chunkSize, gameMode);
+        level = new SyncedLevel(new LevelClientData(_renderer, _input, _audio), _resources, chunkSize, gameMode);
         level.objectAdded += obj => {
             if(obj is PlayerObject player)
                 _players?.Add(player);

@@ -18,8 +18,9 @@ public class SandboxGameMode : SyncedGameMode {
         if(File.Exists("level.bin"))
             level.Load("level.bin");
 
-        SyncedLevel wfcLevel = new(false, level.renderer, level.input, level.audio,
-            level.resources, level.chunkSize, new DummyGameMode()) { doLighting = false };
+        SyncedLevel wfcLevel = new(level.client, level.resources, level.chunkSize, new DummyGameMode()) {
+            doLighting = false
+        };
         wfcLevel.Load("wfc.bin");
         _generator = new WfcLevelGenerator(level, wfcLevel, 3);
     }
