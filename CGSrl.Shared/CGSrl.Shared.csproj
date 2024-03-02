@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
@@ -14,7 +14,7 @@
     <ItemGroup>
       <PackageReference Include="DeBroglie" Version="2.0.0" />
       <PackageReference Include="NLog" Version="5.2.2" />
-      <PackageReference Include="SpaceWizards.Lidgren.Network" Version="0.2.5" />
+      <PackageReference Include="SpaceWizards.Lidgren.Network" Version="0.2.7" />
     </ItemGroup>
 
 </Project>
