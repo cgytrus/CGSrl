@@ -3,7 +3,6 @@ using CGSrl.Shared.Environment.GameModes;
 using CGSrl.Shared.Networking;
 
 using PER.Abstractions;
-using PER.Abstractions.Rendering;
 using PER.Util;
 
 namespace CGSrl.Server;
@@ -14,10 +13,10 @@ public class Game : IGame, ISetupable, ITickable {
 
     public void Unload() { }
     public void Load() { }
-    public RendererSettings Loaded() => new();
+    public void Loaded() { }
 
     public void Setup() {
-        _level = new SyncedLevel(false, Core.engine.renderer, Core.engine.input, Core.engine.audio,
+        _level = new SyncedLevel(false, null!, null!, null!,
             Core.engine.resources, new Vector2Int(16, 16), new SandboxGameMode(),
             Core.engine.tickInterval);
         _server = new GameServer(_level, 12420);

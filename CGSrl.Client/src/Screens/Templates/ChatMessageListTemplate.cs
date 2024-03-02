@@ -5,7 +5,6 @@ using CGSrl.Client.Networking;
 using PER.Abstractions.Audio;
 using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
-using PER.Abstractions.UI;
 using PER.Common.Effects;
 using PER.Util;
 
@@ -52,7 +51,7 @@ public class ChatMessageListTemplate : ListBoxTemplateResource<ChatMessage> {
 
         public override void MoveTo(Vector2Int origin, int index, Vector2Int size) {
             int yOffset = size.y - 1 - height * index;
-            foreach((string? id, PER.Abstractions.UI.Element? element) in idElements)
+            foreach((string? id, Element? element) in idElements)
                 element.position = origin + offsets[id] + new Vector2Int(0, yOffset);
         }
     }

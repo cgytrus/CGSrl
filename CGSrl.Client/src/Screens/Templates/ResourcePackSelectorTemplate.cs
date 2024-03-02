@@ -4,7 +4,6 @@ using PER.Abstractions.Audio;
 using PER.Abstractions.Input;
 using PER.Abstractions.Rendering;
 using PER.Abstractions.Resources;
-using PER.Abstractions.UI;
 using PER.Util;
 
 using PRR.UI;
@@ -106,7 +105,7 @@ public class ResourcePackSelectorTemplate : ListBoxTemplateResource<ResourcePack
             int maxY = _resource._availablePacks.Count - 1;
             int y = maxY - index;
             y *= height;
-            foreach((string id, PER.Abstractions.UI.Element element) in idElements)
+            foreach((string id, Element element) in idElements)
                 element.position = _resource.GetElement(id).position + origin + new Vector2Int(0, y);
         }
     }

@@ -42,7 +42,7 @@ public class Commands {
             .Executes(context => {
                 if(!CheckServerPlayer(context))
                     return 1;
-                Core.engine.renderer.Close();
+                Core.engine.running = false;
                 return 1;
             })), "Stops the server.");
 

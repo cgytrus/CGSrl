@@ -59,7 +59,7 @@ public class Game : IGame, ISetupable, IUpdatable {
         resources.TryAddResource(ConnectionErrorDialogBoxScreen.GlobalId, new ConnectionErrorDialogBoxScreen());
     }
 
-    public RendererSettings Loaded() {
+    public void Loaded() {
         if(!Core.engine.resources.TryGetResource(FontResource.GlobalId, out FontResource? font) || font.font is null)
             throw new InvalidOperationException("Missing font.");
         Core.engine.resources.TryGetResource(IconResource.GlobalId, out IconResource? icon);
@@ -79,15 +79,12 @@ public class Game : IGame, ISetupable, IUpdatable {
 
         Core.engine.updateInterval =
             _settings.fpsLimit <= 0 ? TimeSpan.Zero : TimeSpan.FromSeconds(1d / _settings.fpsLimit);
-        return new RendererSettings {
-            title = "CGSrl",
-            width = 128,
-            height = 72,
-            verticalSync = _settings.fpsLimit < 0,
+        Core.engine.rendererSettings = new RendererSettings {
             fullscreen = _settings.fullscreen,
             font = font.font,
             icon = icon?.icon
         };
+        Core.engine.renderer.verticalSync = _settings.fpsLimit < 0;
     }
 
     public void Setup() {
